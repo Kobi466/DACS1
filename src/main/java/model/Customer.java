@@ -48,6 +48,11 @@ public class Customer {
     public Customer() {
     }
 
+    public Customer(String username, String password) {
+        this.userName = username;
+        this.password = password;
+    }
+
     public String getUserName() {
         return userName;
     }

@@ -9,7 +9,7 @@ public class CustomerDAO extends AbstractDAO<Customer, Integer> {
     public CustomerDAO() {
         super(Customer.class);
     }
-    public Customer findByUsername(String username) {
-        return em.createQuery("from Customer where userName =:username", Customer.class).setParameter("username", username).getSingleResult();
+    public Customer findByUsername(String username, String password) {
+        return em.createQuery("from Customer where userName =:username and password =: password", Customer.class).setParameter("username", username).setParameter("password", password).getSingleResult();
     }
 }

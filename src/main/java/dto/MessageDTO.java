@@ -3,9 +3,9 @@ package dto;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 import java.time.LocalDateTime;
-
 
 @XmlRootElement(name = "message")
 @XmlAccessorType(XmlAccessType.FIELD)
@@ -13,22 +13,27 @@ public class MessageDTO {
     private String sender;
     private String receiver;
     private String content;
-    private LocalDateTime timestamp;
 
-    public MessageDTO(String sender, String receiver, String content, LocalDateTime timestamp) {
+    @XmlJavaTypeAdapter(LocalDateTimeAdapter.class)
+    private LocalDateTime timestamp;
+    private int customerID;
+
+    public MessageDTO(String sender, String receiver, String content, LocalDateTime timestamp, int customerID) {
         this.sender = sender;
         this.receiver = receiver;
         this.content = content;
         this.timestamp = timestamp;
+        this.customerID = customerID;
+    }
+
+    public MessageDTO(String customer, String staff, String content, LocalDateTime now) {
+        this.sender = customer;
+        this.receiver = staff;
+        this.content = content;
+        this.timestamp = now;
     }
 
     public MessageDTO() {
-    }
-
-    public MessageDTO(String customer, String text, LocalDateTime now) {
-        this.sender = customer;
-        this.content = text;
-        this.timestamp = now;
     }
 
     public String getSender() {
@@ -61,5 +66,13 @@ public class MessageDTO {
 
     public void setTimestamp(LocalDateTime timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public int getCustomerID() {
+        return customerID;
+    }
+
+    public void setCustomerID(int customerID) {
+        this.customerID = customerID;
     }
 }

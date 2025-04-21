@@ -1,60 +1,58 @@
 package server;
 
+import dao.MessageDAO;
 import dto.MessageDTO;
-import jakarta.persistence.EntityManager;
-import model.Message;
-import util.HibernateUtil;
+import jakarta.xml.bind.JAXBException;
 import util.XMLUtil;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
-import java.util.Map;
 
 public class ClientHandler implements Runnable {
     private Socket socket;
-    private Map<String, Socket> clients;
+    private BufferedWriter writer;
+    private String userType;
 
-    public ClientHandler(Socket socket, Map<String, Socket> clients) {
+    public ClientHandler(Socket socket) {
         this.socket = socket;
-        this.clients = clients;
+
+    }
+
+    public void sendMessage(String xml) {
+        try {
+            writer.write(xml);
+            writer.newLine();
+            writer.flush();
+        } catch (IOException e) {
+            System.err.println("❌ Gửi thất bại: " + e.getMessage());
+        }
     }
 
     public void run() {
-        try (
-                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                PrintWriter out = new PrintWriter(socket.getOutputStream(), true)
-        ) {
-            String name = in.readLine(); // client gửi username trước
-            clients.put(name, socket);
-            System.out.println("👤 " + name + " đã kết nối");
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+            writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
 
-            String xml;
-            while ((xml = in.readLine()) != null) {
-                MessageDTO msg = XMLUtil.fromXml(xml, MessageDTO.class);
+            String inputLine;
+            while ((inputLine = reader.readLine()) != null) {
+                MessageDTO msg = XMLUtil.fromXML(inputLine, MessageDTO.class);
 
-                // 🔃 Forward
-                Socket receiverSocket = clients.get(msg.getReceiver());
-                if (receiverSocket != null) {
-                    PrintWriter receiverOut = new PrintWriter(receiverSocket.getOutputStream(), true);
-                    receiverOut.println(xml);
+                this.userType = msg.getSender(); // Gán theo sender để phân loại
+
+                System.out.println("📩 " + msg.getSender() + " -> " + msg.getReceiver() + ": " + msg.getContent());
+
+                new MessageDAO().save(msg);
+
+                // Gửi đến người nhận
+                for (ClientHandler client : ChatSocketServer.clients) {
+                    if (client != this && client.userType != null && client.userType.equals(msg.getReceiver())) {
+                        client.sendMessage(XMLUtil.toXML(msg));
+                    }
                 }
-
-                // 🗃️ Lưu vào DB
-                EntityManager em = HibernateUtil.getSessionFactory().createEntityManager();
-                em.getTransaction().begin();
-                Message m = new Message();
-                m.setContent(msg.getContent());
-                m.setSender(msg.getSender());
-                m.setSent_at(msg.getTimestamp());
-                em.persist(m);
-                em.getTransaction().commit();
-                em.close();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (IOException | JAXBException e) {
+            System.err.println("❌ Client mất kết nối: " + e.getMessage());
+        } finally {
+            ChatSocketServer.clients.remove(this);
         }
     }
 }
-

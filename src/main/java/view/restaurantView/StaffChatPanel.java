@@ -1,10 +1,7 @@
+package view.restaurantView;
 
-package view.customerView;
-
-import dao.CustomerDAO;
 import dto.MessageDTO;
 import jakarta.xml.bind.JAXBException;
-import model.Customer;
 import util.XMLUtil;
 
 import javax.swing.*;
@@ -15,7 +12,7 @@ import java.io.*;
 import java.net.Socket;
 import java.time.LocalDateTime;
 
-public class CustomerChatPanel extends JPanel {
+public class StaffChatPanel extends JPanel {
     private JTextArea chatArea;
     private JTextField inputField;
     private JButton sendButton;
@@ -23,7 +20,7 @@ public class CustomerChatPanel extends JPanel {
     private PrintWriter out;
     private BufferedReader in;
 
-    public CustomerChatPanel() {
+    public StaffChatPanel() {
         setLayout(new BorderLayout());
 
         chatArea = new JTextArea();
@@ -74,12 +71,8 @@ public class CustomerChatPanel extends JPanel {
 
     private void sendMessage(ActionEvent e) throws JAXBException {
         String content = inputField.getText().trim();
-        Customer customerId = new Customer();
-        customerId = CustomerDAO.getInstance().selecById(1);
-        String user = String.valueOf(customerId.getUserName());
-        String id = String.valueOf(customerId.getUserName());
         if (!content.isEmpty()) {
-            MessageDTO msg = new MessageDTO("Customer","Staff", content, LocalDateTime.now());
+            MessageDTO msg = new MessageDTO("Staff", "Customer", content, LocalDateTime.now());
             String xml = XMLUtil.toXML(msg);
             out.println(xml);
             appendMessage("Bạn: " + content);
@@ -89,12 +82,12 @@ public class CustomerChatPanel extends JPanel {
 
     private void startReceiveThread() {
         new Thread(() -> {
-            String line;
             try {
+                String line;
                 while ((line = in.readLine()) != null) {
                     MessageDTO msg = XMLUtil.fromXML(line, MessageDTO.class);
-                    if ("Staff".equals(msg.getSender())) {
-                        appendMessage("Nhân viên: " + msg.getContent());
+                    if ("Customer".equals(msg.getSender())) {
+                        appendMessage("Khách hàng: " + msg.getContent());
                     }
                 }
             } catch (IOException e) {
@@ -109,3 +102,4 @@ public class CustomerChatPanel extends JPanel {
         chatArea.append(message + "\n");
     }
 }
+
