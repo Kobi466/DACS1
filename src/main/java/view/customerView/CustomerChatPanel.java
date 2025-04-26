@@ -22,6 +22,8 @@ public class CustomerChatPanel extends JPanel {
     private Socket socket;
     private PrintWriter out;
     private BufferedReader in;
+    public static String user;
+    public static int id;
 
     public CustomerChatPanel() {
         setLayout(new BorderLayout());
@@ -71,20 +73,30 @@ public class CustomerChatPanel extends JPanel {
             }
         });
     }
-
     private void sendMessage(ActionEvent e) throws JAXBException {
         String content = inputField.getText().trim();
-        Customer customerId = new Customer();
-        customerId = CustomerDAO.getInstance().selecById(1);
-        String user = String.valueOf(customerId.getUserName());
-        String id = String.valueOf(customerId.getUserName());
+        Customer customerId;
+        String tk = LoginUI.usernameField.getText();
+        String mk = LoginUI.passwordField.getText();
+        customerId = CustomerDAO.getInstance().findByUsername(tk, mk);
+        user = String.valueOf(customerId.getUserName());
+        id = (customerId.getCustomer_Id());
         if (!content.isEmpty()) {
-            MessageDTO msg = new MessageDTO("Customer","Staff", content, LocalDateTime.now());
+            MessageDTO msg = new MessageDTO(user,"Staff", content, LocalDateTime.now(), id);
+            System.out.println("🟢 GỬI: " + msg.getSender() + ", ID=" + msg.getCustomerID());
             String xml = XMLUtil.toXML(msg);
+            System.out.println("🔼 XML gửi: \n" + xml);
             out.println(xml);
-            appendMessage("Bạn: " + content);
+
+            appendMessage("Bạn  : " + content);
             inputField.setText("");
         }
+    }
+    public static String getUser() {
+        return user;
+    }
+    public static int getId() {
+        return id;
     }
 
     private void startReceiveThread() {
@@ -93,7 +105,7 @@ public class CustomerChatPanel extends JPanel {
             try {
                 while ((line = in.readLine()) != null) {
                     MessageDTO msg = XMLUtil.fromXML(line, MessageDTO.class);
-                    if ("Staff".equals(msg.getSender())) {
+                    if ("Staff".equals(msg.getSender()) && msg.getReceiver().equals(user)) {
                         appendMessage("Nhân viên: " + msg.getContent());
                     }
                 }

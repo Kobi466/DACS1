@@ -1,12 +1,16 @@
 package server;
 
+
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ChatSocketServer {
-    public static CopyOnWriteArrayList<ClientHandler> clients = new CopyOnWriteArrayList<>();
+    public static Map<String, ClientHandler> clients = new ConcurrentHashMap<>();//danh sach client
+
 
     public static void main(String[] args) {
         try (ServerSocket serverSocket = new ServerSocket(10000)) {
@@ -14,7 +18,7 @@ public class ChatSocketServer {
             while (true) {
                 Socket clientSocket = serverSocket.accept();
                 ClientHandler handler = new ClientHandler(clientSocket);
-                clients.add(handler);
+                clients.get(handler);
                 new Thread(handler).start();
             }
         } catch (IOException e) {

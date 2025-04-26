@@ -70,16 +70,5 @@ public class CustomerVoucher {
     public void setVoucher(Voucher voucher) {
         this.voucher = voucher;
     }
-
-    @Override
-    public String toString() {
-        return "CustomerVoucher{" +
-                "id=" + id +
-                ", used=" + used +
-                ", usedAt=" + usedAt +
-                ", customer=" + customer +
-                ", voucher=" + voucher +
-                '}';
-    }
 }
 

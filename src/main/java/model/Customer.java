@@ -25,7 +25,7 @@ public class Customer {
     private List<Rating> ratings;
     @OneToMany(mappedBy = "customer")
     private List<CustomerVoucher> customerVouchers;
-    @OneToMany(mappedBy = "customer")
+    @OneToMany(mappedBy = "customer", fetch = FetchType.LAZY)
     private List<Message> messages;
 
     public Customer(String userName, String password, String sdt, List<Order> orders, List<Reservation> reservations, List<Rating> ratings, List<CustomerVoucher> customerVouchers, List<Message> messages) {
@@ -136,20 +136,5 @@ public class Customer {
         } else {
             System.out.println("❌ Số điện thoại không hợp lệ! Chỉ chấp nhận: 036..., 84..., hoặc +84...");
         }
-    }
-
-    @Override
-    public String toString() {
-        return "Customer{" +
-                "customer_Id=" + customer_Id +
-                ", userName='" + userName + '\'' +
-                ", password='" + password + '\'' +
-                ", sdt='" + sdt + '\'' +
-                ", orders=" + orders +
-                ", reservations=" + reservations +
-                ", ratings=" + ratings +
-                ", customerVouchers=" + customerVouchers +
-                ", messages=" + messages +
-                '}';
     }
 }

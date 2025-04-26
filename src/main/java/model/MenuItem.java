@@ -67,16 +67,5 @@ public class MenuItem {
     public void setOrderItems(List<OrderItem> orderItems) {
         this.orderItems = orderItems;
     }
-
-    @Override
-    public String toString() {
-        return "MenuItem{" +
-                "food_Id=" + food_Id +
-                ", name='" + name + '\'' +
-                ", price=" + price +
-                ", quantity=" + quantity +
-                ", orderItems=" + orderItems +
-                '}';
-    }
 }
 

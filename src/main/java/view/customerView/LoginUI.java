@@ -12,8 +12,8 @@ import java.awt.geom.RoundRectangle2D;
 import java.util.ArrayList;
 
 public class LoginUI extends JFrame {
-    public JTextField usernameField;
-    public JPasswordField passwordField;
+    public static JTextField usernameField;
+    public static JPasswordField passwordField;
     public JButton loginButton;
     public JPanel panel;
     public JLabel titleLabel, usernameLabel, passwordLabel;
@@ -370,6 +370,12 @@ public class LoginUI extends JFrame {
         SwingUtilities.invokeLater(() ->{
             new LoginUI().setVisible(true);
         });
+    }
+    public static String getUsername() {
+        return usernameField.getText();
+    }
+    public static String getPass() {
+        return passwordField.getText();
     }
 }
 

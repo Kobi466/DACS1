@@ -79,17 +79,5 @@ public class Voucher {
     public void setCustomerVouchers(List<CustomerVoucher> customerVouchers) {
         this.customerVouchers = customerVouchers;
     }
-
-    @Override
-    public String toString() {
-        return "Voucher{" +
-                "voucher_id=" + voucher_id +
-                ", code='" + code + '\'' +
-                ", discount=" + discount +
-                ", startDate=" + startDate +
-                ", endDate=" + endDate +
-                ", customerVouchers=" + customerVouchers +
-                '}';
-    }
 }
 

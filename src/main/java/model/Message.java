@@ -77,16 +77,4 @@ public class Message {
     public void setCustomer(Customer customer) {
         this.customer = customer;
     }
-
-    @Override
-    public String toString() {
-        return "Message{" +
-                "message_id=" + message_id +
-                ", sender='" + sender + '\'' +
-                ", receiver='" + receiver + '\'' +
-                ", content='" + content + '\'' +
-                ", sent_at=" + sent_at +
-                ", customer=" + customer +
-                '}';
-    }
 }

@@ -20,26 +20,43 @@ public class MessageDAO extends AbstractDAO<Message, Integer>{
                 .setParameter("customer", customer)
                 .getResultList();
     }
+    public List<Message> getMessagesBetween(String sender, String receiver) {
+        try {
+            return em.createQuery(
+                            "FROM Message WHERE (sender = :sender AND receiver = :receiver) " +
+                                    "OR (sender = :receiver AND receiver = :sender) ORDER BY sent_at ASC", Message.class)
+                    .setParameter("sender", sender)
+                    .setParameter("receiver", receiver)
+                    .getResultList();
+        } finally {
+            em.close();
+        }
+    }
 
-    public void save(MessageDTO dto) {
+
+
+    public void saveMessage(MessageDTO dto) {
+        Session session = HibernateUtil.getSessionFactory().openSession();
         Transaction tx = null;
 
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+        try {
             tx = session.beginTransaction();
-
-            Message message = new Message();
-            message.setSender(dto.getSender());
-            message.setReceiver(dto.getReceiver());
-            message.setContent(dto.getContent());
-            message.setSent_at(dto.getTimestamp());
+            Message msg = new Message();
+            msg.setContent(dto.getContent());
+            msg.setSender(dto.getSender());
+            msg.setReceiver(dto.getReceiver());
+            msg.setSent_at(dto.getTimestamp());
             Customer customer = session.get(Customer.class, dto.getCustomerID());
-            message.setCustomer(customer);
+            msg.setCustomer(customer); // 👈 gán FK customer
 
-            session.persist(message);
+            session.save(msg);
             tx.commit();
         } catch (Exception e) {
             if (tx != null) tx.rollback();
             e.printStackTrace();
+        } finally {
+            session.close();
         }
     }
+
 }

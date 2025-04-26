@@ -74,16 +74,5 @@ public class Reservation {
     public void setTableBooking(TableBooking tableBooking) {
         this.tableBooking = tableBooking;
     }
-
-    @Override
-    public String toString() {
-        return "Reservation{" +
-                "reservationId=" + reservationId +
-                ", bookingTime=" + bookingTime +
-                ", status=" + status +
-                ", customer=" + customer +
-                ", tableBooking=" + tableBooking +
-                '}';
-    }
 }
 

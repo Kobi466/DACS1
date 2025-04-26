@@ -63,15 +63,5 @@ public class KitchenQueue {
     public void setOrderItem(OrderItem orderItem) {
         this.orderItem = orderItem;
     }
-
-    @Override
-    public String toString() {
-        return "KitchenQueue{" +
-                "id=" + id +
-                ", status=" + status +
-                ", updatedAt=" + updatedAt +
-                ", orderItem=" + orderItem +
-                '}';
-    }
 }
 

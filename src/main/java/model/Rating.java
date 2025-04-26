@@ -68,16 +68,5 @@ public class Rating {
     public void setOrder(Order order) {
         this.order = order;
     }
-
-    @Override
-    public String toString() {
-        return "Rating{" +
-                "ratingId=" + ratingId +
-                ", stars=" + stars +
-                ", comment='" + comment + '\'' +
-                ", customer=" + customer +
-                ", order=" + order +
-                '}';
-    }
 }
 

@@ -2,7 +2,6 @@ package server;
 
 import dao.MessageDAO;
 import dto.MessageDTO;
-import jakarta.xml.bind.JAXBException;
 import util.XMLUtil;
 
 import java.io.*;
@@ -15,7 +14,6 @@ public class ClientHandler implements Runnable {
 
     public ClientHandler(Socket socket) {
         this.socket = socket;
-
     }
 
     public void sendMessage(String xml) {
@@ -36,23 +34,25 @@ public class ClientHandler implements Runnable {
             while ((inputLine = reader.readLine()) != null) {
                 MessageDTO msg = XMLUtil.fromXML(inputLine, MessageDTO.class);
 
-                this.userType = msg.getSender(); // Gán theo sender để phân loại
+                this.userType = msg.getSender(); // lưu tên user
+                ChatSocketServer.clients.putIfAbsent(msg.getSender(), this);
 
                 System.out.println("📩 " + msg.getSender() + " -> " + msg.getReceiver() + ": " + msg.getContent());
 
-                new MessageDAO().save(msg);
+                new MessageDAO().saveMessage(msg);
 
-                // Gửi đến người nhận
-                for (ClientHandler client : ChatSocketServer.clients) {
-                    if (client != this && client.userType != null && client.userType.equals(msg.getReceiver())) {
-                        client.sendMessage(XMLUtil.toXML(msg));
-                    }
+                ClientHandler receiverHandler = ChatSocketServer.clients.get(msg.getReceiver());
+                if (receiverHandler != null) {
+                    String xml = XMLUtil.toXML(msg); // Gửi XML, không chỉ content!
+                    receiverHandler.sendMessage(xml);
                 }
             }
-        } catch (IOException | JAXBException e) {
+        } catch (Exception e) {
             System.err.println("❌ Client mất kết nối: " + e.getMessage());
         } finally {
-            ChatSocketServer.clients.remove(this);
+            if (userType != null) {
+                ChatSocketServer.clients.remove(userType);
+            }
         }
     }
 }
