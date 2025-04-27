@@ -1,12 +1,12 @@
-package view.restaurantView;
+package view.restaurantView.kho;
 
 import dao.MenuItemDAO;
 import dao.OrderDAO;
+import dao.TableBookingDAO;
 import model.MenuItem;
 import model.Order;
 import model.OrderItem;
 import model.TableBooking;
-
 
 import javax.swing.*;
 import javax.swing.Timer;
@@ -18,8 +18,6 @@ import java.text.NumberFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
-
-
 import java.util.stream.Collectors;
 
 public class OrderManagementPanel extends JPanel {
@@ -31,21 +29,22 @@ public class OrderManagementPanel extends JPanel {
     private JTextField searchField;
     private JComboBox<Order.OrderStatus> statusFilter;
     private JLabel statsLabel;
-    private Integer currentSelectedOrderId = null;
-    private Order currentSelectedOrder = null; // thay đổi kiểu dữ liệu
+    private Order currentSelectedOrder = null;
     private Timer refreshTimer;
     private List<Order> currentOrders;
     private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
 
-
-    private static final int REFRESH_INTERVAL = 10_000; // 10 giây
+    private static final int REFRESH_INTERVAL = 10_000;
     private static final Map<Order.OrderStatus, Color> STATUS_COLORS = Map.of(
-        Order.OrderStatus.CHO_XAC_NHAN, new Color(255, 255, 200),
-        Order.OrderStatus.DA_XAC_NHAN, new Color(200, 255, 200),
-        Order.OrderStatus.DANG_CHE_BIEN, new Color(255, 200, 100),
-        Order.OrderStatus.HOAN_THANH, new Color(200, 255, 200),
-        Order.OrderStatus.DA_HUY, new Color(255, 200, 200)
+            Order.OrderStatus.CHO_XAC_NHAN, new Color(255, 255, 200),
+            Order.OrderStatus.DA_XAC_NHAN, new Color(200, 255, 200),
+            Order.OrderStatus.DANG_CHE_BIEN, new Color(255, 200, 100),
+            Order.OrderStatus.HOAN_THANH, new Color(200, 255, 200),
+            Order.OrderStatus.DA_HUY, new Color(255, 200, 200)
     );
+    private Map<Integer, List<Order>> tableOrders; // Lưu trữ đơn theo bàn
+    private JComboBox<String> tableFilter; // Bộ lọc theo bàn
+
 
     public OrderManagementPanel() {
         setLayout(new BorderLayout(10, 10));
@@ -60,15 +59,24 @@ public class OrderManagementPanel extends JPanel {
     }
 
     private void initializeComponents() {
-        // Khởi tạo các controls
+        // Khởi tạo các điều khiển
         searchField = createSearchField();
         statusFilter = createStatusFilter();
         statsLabel = new JLabel("Tổng đơn: 0 | Tổng tiền: 0đ");
+        // Thêm bộ lọc bàn
+        tableFilter = createTableFilter();
 
-        // Khởi tạo tables
+        JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        filterPanel.add(new JLabel("Bàn:"));
+        filterPanel.add(tableFilter);
+        filterPanel.add(Box.createHorizontalStrut(20));
+        filterPanel.add(new JLabel("Trạng thái:"));
+        filterPanel.add(statusFilter);
+
+        // Khởi tạo bảng
         setupTables();
 
-        // Thêm listeners
+        // Thêm người nghe sự kiện
         setupEventListeners();
     }
 
@@ -87,10 +95,10 @@ public class OrderManagementPanel extends JPanel {
     }
 
     private void setupTables() {
-        // Table model cho orders
+        // Mô hình bảng cho đơn hàng
         orderModel = new DefaultTableModel(
-            new String[]{"Mã KH", "Khách hàng", "Số đơn", "Tổng món", "Tổng tiền", "Trạng thái", "Ghi chú"},
-            0
+                new String[]{"Mã KH", "Khách hàng", "Số đơn", "Tổng món", "Tổng tiền", "Trạng thái", "Ghi chú"},
+                0
         ) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -102,38 +110,51 @@ public class OrderManagementPanel extends JPanel {
         orderTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         orderTable.setRowHeight(25);
 
-        // Table model cho chi tiết
+        // Mô hình bảng cho chi tiết
         detailModel = new DefaultTableModel(
-            new String[]{"Mã món", "Tên món", "Số lượng", "Đơn giá", "Thành tiền", "Bàn", "Thời gian", "Ghi chú"},
-            0
+                new String[]{"Mã món", "Tên món", "Số lượng", "Đơn giá", "Thành tiền", "Bàn", "Thời gian", "Ghi chú"},
+                0
         );
 
         orderDetailTable = new JTable(detailModel);
         orderDetailTable.setRowHeight(25);
 
-        // Cài đặt renderers
+        // Thiết lập trình hiển thị
         setupTableRenderers();
     }
+    private JComboBox<String> createTableFilter() {
+        JComboBox<String> filter = new JComboBox<>();
+        filter.addItem("Tất cả bàn");
+        // Thêm danh sách bàn từ cơ sở dữ liệu
+        List<TableBooking> tables = TableBookingDAO.getInstance().selectAll();
+        for (TableBooking table : tables) {
+            filter.addItem(formatTableInfo(table));
+        }
+        filter.addActionListener(e -> applyFilters());
+        return filter;
+    }
+
+
 
     private void setupTableRenderers() {
-        // Money renderer
+        // Trình hiển thị tiền tệ
         DefaultTableCellRenderer moneyRenderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
-                    boolean isSelected, boolean hasFocus, int row, int column) {
-               if (value instanceof BigDecimal) {
-                   value = CURRENCY_FORMAT.format(((BigDecimal) value)) + " đ";
-               }
+                                                           boolean isSelected, boolean hasFocus, int row, int column) {
+                if (value instanceof BigDecimal) {
+                    value = CURRENCY_FORMAT.format(((BigDecimal) value)) + " đ";
+                }
                 return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             }
         };
         moneyRenderer.setHorizontalAlignment(SwingConstants.RIGHT);
 
-        // Status renderer
+        // Trình hiển thị trạng thái
         DefaultTableCellRenderer statusRenderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
-                    boolean isSelected, boolean hasFocus, int row, int column) {
+                                                           boolean isSelected, boolean hasFocus, int row, int column) {
                 Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                 if (value instanceof Order.OrderStatus && !isSelected) {
                     setBackground(STATUS_COLORS.getOrDefault((Order.OrderStatus)value, Color.WHITE));
@@ -142,14 +163,13 @@ public class OrderManagementPanel extends JPanel {
             }
         };
 
-        // Áp dụng renderers
+        // Áp dụng trình hiển thị
         orderTable.getColumn("Tổng tiền").setCellRenderer(moneyRenderer);
         orderTable.getColumn("Trạng thái").setCellRenderer(statusRenderer);
     }
 
-
     private void setupLayout() {
-        // Top panel with search and filter
+        // Panel phía trên với tìm kiếm và bộ lọc
         JPanel topPanel = new JPanel(new BorderLayout());
 
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -165,20 +185,22 @@ public class OrderManagementPanel extends JPanel {
         topPanel.add(searchPanel, BorderLayout.WEST);
         topPanel.add(statsPanel, BorderLayout.EAST);
 
-        // Main content
+        // Nội dung chính
         JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
         splitPane.setTopComponent(createTablePanel(orderTable, "Danh sách đơn hàng"));
         splitPane.setBottomComponent(createTablePanel(orderDetailTable, "Chi tiết đơn hàng"));
         splitPane.setResizeWeight(0.5);
 
-        // Button panel
+        // Panel nút
         JPanel buttonPanel = createButtonPanel();
 
-        // Layout assembly
+        // Lắp ráp bố cục
         add(topPanel, BorderLayout.NORTH);
         add(splitPane, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
     }
+
+
 
     private JPanel createTablePanel(JTable table, String title) {
         JPanel panel = new JPanel(new BorderLayout());
@@ -190,7 +212,7 @@ public class OrderManagementPanel extends JPanel {
     private JPanel createButtonPanel() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
 
-        // Tạo các nút với icons
+        // Tạo các nút với biểu tượng
         panel.add(createButton("Làm mới", "refresh", e -> refreshData()));
         panel.add(createButton("Xác nhận", "confirm", e -> handleUpdateStatus(Order.OrderStatus.DA_XAC_NHAN)));
         panel.add(createButton("Chế biến", "cooking", e -> handleUpdateStatus(Order.OrderStatus.DANG_CHE_BIEN)));
@@ -201,13 +223,12 @@ public class OrderManagementPanel extends JPanel {
         return panel;
     }
 
-    // ... (tiếp tục phần 2)
-        private JButton createButton(String text, String iconName, java.awt.event.ActionListener listener) {
+    private JButton createButton(String text, String iconName, java.awt.event.ActionListener listener) {
         JButton button = new JButton(text);
         try {
             button.setIcon(new ImageIcon(getClass().getResource("/icons/" + iconName + ".png")));
         } catch (Exception e) {
-            System.err.println("Không tìm thấy icon: " + iconName);
+            System.err.println("Không tìm thấy biểu tượng: " + iconName);
         }
         button.addActionListener(listener);
         button.setFocusPainted(false);
@@ -367,7 +388,7 @@ public class OrderManagementPanel extends JPanel {
     }
 
     private void printOrders(List<Order> orders) {
-        // Implement in hóa đơn ở đây
+        // Triển khai chức năng in ở đây
         // Có thể sử dụng JasperReports hoặc iText
     }
 
@@ -412,7 +433,7 @@ public class OrderManagementPanel extends JPanel {
         SwingWorker<Void, Void> worker = new SwingWorker<>() {
             @Override
             protected Void doInBackground() {
-                // Lưu lại đơn hàng đang chọn
+                // Lưu đơn hàng đang chọn
                 int selectedRow = orderTable.getSelectedRow();
                 if (selectedRow != -1) {
                     int customerId = (int) orderTable.getValueAt(selectedRow, 0);
@@ -431,7 +452,7 @@ public class OrderManagementPanel extends JPanel {
 
             @Override
             protected void done() {
-                // Khôi phục selection sau khi refresh
+                // Khôi phục lựa chọn sau khi làm mới
                 if (currentSelectedOrder != null) {
                     for (int i = 0; i < orderTable.getRowCount(); i++) {
                         int customerId = (int) orderTable.getValueAt(i, 0);
@@ -451,8 +472,6 @@ public class OrderManagementPanel extends JPanel {
         };
         worker.execute();
     }
-
-
 
     private void checkNewOrders() {
         int newOrdersCount = OrderDAO.getInstance().findNewOrders().size();
@@ -488,7 +507,7 @@ public class OrderManagementPanel extends JPanel {
         }
     }
 
-    // Helper methods
+    // Các phương thức trợ giúp
     private BigDecimal calculateOrderTotal(Order order) {
         return order.getOrderItems().stream()
                 .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
@@ -518,13 +537,13 @@ public class OrderManagementPanel extends JPanel {
 
     private String getOrderNotes(List<Order> orders) {
         return orders.stream()
-                    .map(order -> order.getOrderItems().stream()
-                            .filter(item -> item.getKitchenQueue() != null)
-                            .map(OrderItem::getMenuItem)  // lấy MenuItem từ OrderItem
-                            .map(MenuItem::getName)       // lấy tên món ăn
-                            .collect(Collectors.joining("; ")))
-                    .filter(note -> !note.isEmpty())
-                    .collect(Collectors.joining(" | "));
+                .map(order -> order.getOrderItems().stream()
+                        .filter(item -> item.getKitchenQueue() != null)
+                        .map(OrderItem::getMenuItem)
+                        .map(MenuItem::getName)
+                        .collect(Collectors.joining("; ")))
+                .filter(note -> !note.isEmpty())
+                .collect(Collectors.joining(" | "));
     }
 
     private String getStatusText(Order.OrderStatus status) {
@@ -567,11 +586,11 @@ public class OrderManagementPanel extends JPanel {
         }
     }
 
-    // Custom renderer for status combo box
+    // Trình hiển thị tùy chỉnh cho hộp combo trạng thái
     private class StatusComboRenderer extends DefaultListCellRenderer {
         @Override
         public Component getListCellRendererComponent(JList<?> list, Object value,
-                int index, boolean isSelected, boolean cellHasFocus) {
+                                                      int index, boolean isSelected, boolean cellHasFocus) {
             super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             if (value instanceof Order.OrderStatus) {
                 setText(getStatusText((Order.OrderStatus) value));
@@ -581,6 +600,7 @@ public class OrderManagementPanel extends JPanel {
             return this;
         }
     }
+
     public void stopAutoRefresh() {
         if (refreshTimer != null && refreshTimer.isRunning()) {
             refreshTimer.stop();
@@ -595,17 +615,14 @@ public class OrderManagementPanel extends JPanel {
         refreshTimer.start();
     }
 
-    // Sửa lại phương thức setupEventListeners
     private void setupEventListeners() {
-        // ... các listener khác giữ nguyên ...
-
-        // Order selection listener
+        // Người nghe sự kiện lựa chọn đơn hàng
         orderTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
-                // Tạm dừng auto refresh khi user đang xem chi tiết
+                // Tạm dừng tự động làm mới khi người dùng đang xem chi tiết
                 stopAutoRefresh();
                 showOrderDetails();
-                // Khởi động lại auto refresh sau 1 phút không tương tác
+                // Khởi động lại tự động làm mới sau 1 phút không tương tác
                 Timer delayedRefreshTimer = new Timer(60000, ev -> startAutoRefresh());
                 delayedRefreshTimer.setRepeats(false);
                 delayedRefreshTimer.start();
@@ -613,4 +630,10 @@ public class OrderManagementPanel extends JPanel {
         });
     }
 
+    public static void main(String[] args) {
+        JFrame frame = new JFrame();
+        frame.add(new OrderManagementPanel());
+        frame.setSize(800, 600);
+        frame.setVisible(true);
+    }
 }

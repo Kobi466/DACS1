@@ -67,5 +67,8 @@ public class MenuItem {
     public void setOrderItems(List<OrderItem> orderItems) {
         this.orderItems = orderItems;
     }
+
+    public static class ItemType {
+    }
 }
 
