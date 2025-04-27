@@ -12,6 +12,6 @@ public class KitchenQueueDAO extends AbstractDAO<KitchenQueue, Integer> {
         super(KitchenQueue.class);
     }
     public List<KitchenQueue> findPending() {
-        return em.createQuery("from KitchenQueue where status = 'ĐangNấu'", KitchenQueue.class).getResultList();
+        return em.createQuery("from KitchenQueue where status = 'DANG_NAU'", KitchenQueue.class).getResultList();
     }
 }

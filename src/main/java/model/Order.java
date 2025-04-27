@@ -25,7 +25,7 @@ public class Order {
     @OneToOne(mappedBy = "order", cascade = CascadeType.ALL)
     private Rating rating;
     public enum OrderStatus {
-        KếtThúc, XácNhận, HoànThành
+        CHO_XAC_NHAN, DA_XAC_NHAN, DANG_CHE_BIEN, HOAN_THANH, DA_HUY
     }
 
     public Order(int order_Id, Customer customer, TableBooking table, LocalDateTime orderDate, OrderStatus status, List<OrderItem> orderItems, Rating rating) {

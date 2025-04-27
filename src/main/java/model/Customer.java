@@ -2,7 +2,6 @@ package model;
 
 import jakarta.persistence.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -28,21 +27,10 @@ public class Customer {
     @OneToMany(mappedBy = "customer", fetch = FetchType.LAZY)
     private List<Message> messages;
 
-    public Customer(String userName, String password, String sdt, List<Order> orders, List<Reservation> reservations, List<Rating> ratings, List<CustomerVoucher> customerVouchers, List<Message> messages) {
-        this.userName = userName;
-        this.password = password;
-        this.sdt = sdt;
-        this.orders = new ArrayList<>();
-        this.reservations = new ArrayList<>();
-        this.ratings = new ArrayList<>();
-        this.customerVouchers = new ArrayList<>();
-        this.messages = new ArrayList<>();
-    }
-
     public Customer(String userName, String password, String sdt) {
         this.userName = userName;
         this.password = password;
-        this.sdt = sdt;
+        this.setSdt(sdt);
     }
 
     public Customer() {

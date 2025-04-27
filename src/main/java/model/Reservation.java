@@ -22,7 +22,7 @@ public class Reservation {
     @JoinColumn(name = "table_id")
     private TableBooking tableBooking;
     public enum ReservationStatus {
-        ChờXácNhận, ĐãXácNhận, Hủy
+        CHO_XAC_NHAN, DA_XAC_NHAN, HUY
     }
 
     public Reservation() {

@@ -1,7 +1,6 @@
 package view.restaurantView;
 
 import com.formdev.flatlaf.FlatLightLaf;
-import view.customerView.LoginUI;
 
 import javax.swing.*;
 
@@ -14,8 +13,8 @@ public class StaffGUI extends JFrame {
 
         JTabbedPane tabs = new JTabbedPane();
         tabs.addTab("Chat", new StaffChatPanel());
-        // tabs.addTab("Đơn hàng", new OrderPanel()); // có thể thêm sau
-        // tabs.addTab("Bếp", new KitchenPanel());     // nếu cần
+        tabs.addTab("Đơn hàng", new OrderManagementPanel());
+        tabs.addTab("Bàn", new ReservationManagementPanel());
 
         add(tabs);
     }

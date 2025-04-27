@@ -19,10 +19,10 @@ public class TableBooking {
     private List<Reservation> reservations;
 
     public enum TableType {
-        BÀN, PHÒNGVIP;
+        BAN, PHONG_VIP;
     }
     public enum StatusTable {
-        TRỐNG, ĐÃĐẶT
+        TRONG, DA_DAT
     }
 
     public TableBooking() {
@@ -65,4 +65,9 @@ public class TableBooking {
     public void setReservations(List<Reservation> reservations) {
         this.reservations = reservations;
     }
+    @Override
+    public String toString() {
+        return tableType.name() + " - " + tables_id;
+    }
+
 }

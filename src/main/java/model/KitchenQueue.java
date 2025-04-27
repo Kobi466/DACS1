@@ -20,7 +20,7 @@ public class KitchenQueue {
     @JoinColumn(name = "order_item_id")
     private OrderItem orderItem;
     public enum KitchenStatus {
-        ChờNấu, ĐangNấu, ĐãXong
+        CHO_NAU, DANG_NAU, DA_XONG
     }
 
     public KitchenQueue() {
