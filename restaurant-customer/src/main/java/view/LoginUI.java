@@ -5,7 +5,6 @@ import com.formdev.flatlaf.*;
 import dto.CustomerDTO;
 import network.JsonResponse;
 import service.LoginService;
-import service.MessageService;
 import session.SessionManager;
 import socket.SocketClient;
 
@@ -44,8 +43,8 @@ public class LoginUI extends JFrame {
         SocketClient.connect("localhost", 8080);
 
 // Bắt đầu lắng nghe các phản hồi từ server
-        MessageService messageService = new MessageService();
-        messageService.listenForMessages("localhost", 8080);
+//        CustomerMessageService messageService = new CustomerMessageService();
+//        messageService.listenForMessages("localhost", 8080);
         this.setVisible(true);
     }
 

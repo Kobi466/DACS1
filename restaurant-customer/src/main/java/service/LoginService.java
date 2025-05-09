@@ -10,7 +10,7 @@ public class LoginService {
 
     public static JsonResponse login(String username, String password) {
         JsonRequest request = new JsonRequest("LOGIN", Map.of("username", username, "password", password), username);
-        SocketClient.sendRequest(request);
+        SocketClient.sendRequest(request); // Địa chỉ và cổng của server
         JsonResponse response = SocketClient.readResponse();
 
         if (response != null && "LOGIN_SUCCESS".equals(response.getStatus())) {

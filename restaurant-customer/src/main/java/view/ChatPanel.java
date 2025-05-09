@@ -1,7 +1,7 @@
 package view;
 
 import dto.MessageDTO;
-import service.MessageService;
+import service.CustomerMessageService;
 import session.SessionManager; // Thêm import cho SessionManager
 
 import javax.swing.*;
@@ -13,11 +13,11 @@ public class ChatPanel extends JPanel {
     private JTextArea chatArea; // Khu vực hiển thị lịch sử chat
     private JTextField inputField; // Khu vực nhập tin nhắn
     private JButton sendButton; // Nút gửi tin nhắn
-    private MessageService messageService; // Service để giao tiếp với server
+    private CustomerMessageService messageService; // Service để giao tiếp với server
     private String currentUsername; // Username của customer
     public ChatPanel(String currentUsername) {
         this.currentUsername = currentUsername;
-        this.messageService = new MessageService();
+        this.messageService = new CustomerMessageService();
         initUI();              // Tạo giao diện
         loadChatHistory();     // Lấy lịch sử tin nhắn từ server
     }
@@ -77,7 +77,7 @@ public class ChatPanel extends JPanel {
         chatArea.setCaretPosition(chatArea.getDocument().getLength());
     }
 
-    // Lấy lịch sử tin nhắn từ server (từ MessageService)
+    // Lấy lịch sử tin nhắn từ server (từ CustomerMessageService)
     private void loadChatHistory() {
         int customerId = SessionManager.instance().getCustomerId();
         if (customerId <= 0) {

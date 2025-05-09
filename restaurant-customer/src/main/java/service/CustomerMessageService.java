@@ -4,7 +4,6 @@ import session.ChatHistoryRequest;
 import dto.MessageDTO;
 import network.JsonRequest;
 import network.JsonResponse;
-import socket.RealTimeResponseHandler;
 import socket.SocketClient;
 import session.SessionManager;
 
@@ -12,7 +11,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class MessageService {
+public class CustomerMessageService {
 
     // Gửi tin nhắn từ Customer tới Staff
     public void sendMessage(String fromUsername, String toUsername, String content) {
@@ -32,7 +31,7 @@ public class MessageService {
         );
 
         JsonRequest request = new JsonRequest("SEND_MESSAGE", message, fromUsername);
-        SocketClient.sendRequest(request);
+        SocketClient.sendRequest(request); // Địa chỉ và cổng của server
     }
 
     // Lấy lịch sử tin nhắn giữa Customer và Staff
@@ -46,7 +45,7 @@ public class MessageService {
         JsonRequest request = new JsonRequest("GET_CHAT_HISTORY",
                 new ChatHistoryRequest(fromUsername, toUsername),
                 fromUsername);
-        SocketClient.sendRequest(request);
+        SocketClient.sendRequest(request); // Địa chỉ và cổng của server
 
         JsonResponse response = SocketClient.readResponse();
         if (response != null && "CHAT_HISTORY".equals(response.getStatus())) {
@@ -57,6 +56,6 @@ public class MessageService {
             System.err.println("❌ [Client] Không nhận được phản hồi hợp lệ hoặc lỗi load chat history.");
         }
     }public void listenForMessages(String host, int port) {
-        SocketClient.listenToServer(new RealTimeResponseHandler());
+//        SocketClient.listenToServer( new RealTimeResponseHandler());
     }
 }

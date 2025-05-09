@@ -28,9 +28,60 @@ public class StaffChatPanel extends JFrame {
 
     public StaffChatPanel() {
         checkAndConnectSocket(); // Kiểm tra và kết nối socket tại thời điểm khởi tạo
+        startListening(); // Bắt đầu lắng nghe tin nhắn từ server
         initUI();
         loadCustomerList();
     }
+    private void startListening() {
+        new Thread(() -> {
+            SocketClient.listenToServer(serverHost, serverPort, response -> {
+                switch (response.getStatus()) {
+                    case "MESSAGE_RECEIVED" -> handleIncomingMessage((MessageDTO) response.getData());
+                    case "GET_CUSTOMER_LIST" -> handleCustomerList((List<CustomerDTO>) response.getData());
+                    case "CHAT_HISTORY" -> handleChatHistory((List<MessageDTO>) response.getData());
+                    case "MESSAGE_SENT" -> {} // Có thể bỏ qua
+                    default -> System.out.println("Unhandled response: " + response.getStatus());
+                }
+            });
+        }).start();
+    }
+    private void handleIncomingMessage(MessageDTO message) {
+        String sender = message.getSender();
+
+        // Nếu đang mở đúng cuộc trò chuyện → hiển thị trực tiếp
+        if (selectedCustomer != null && selectedCustomer.equals(sender)) {
+            chatArea.append(sender + ": " + message.getContent() + "\n");
+        }
+
+        // Nếu khách này chưa có trong danh sách → thêm vào
+        if (!customerListModel.contains(sender)) {
+            customerListModel.addElement(sender);
+        }
+    }
+    private void handleCustomerList(List<CustomerDTO> customers) {
+        SwingUtilities.invokeLater(() -> {
+            customerListModel.clear();
+            for (CustomerDTO c : customers) {
+                customerListModel.addElement(c.getUserName());
+            }
+        });
+    }
+    private void handleChatHistory(List<MessageDTO> messages) {
+        SwingUtilities.invokeLater(() -> {
+            chatArea.setText("");
+            if (messages == null || messages.isEmpty()) {
+                chatArea.append("❌ Không có lịch sử tin nhắn.\n");
+                return;
+            }
+            for (MessageDTO m : messages) {
+                chatArea.append(m.getSender() + ": " + m.getContent() + "\n");
+            }
+        });
+    }
+
+
+
+
 
     /**
      * Kiểm tra và kết nối socket đến server.
