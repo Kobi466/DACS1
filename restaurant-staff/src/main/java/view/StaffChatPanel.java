@@ -2,8 +2,6 @@ package view;
 
 import dto.CustomerDTO;
 import dto.MessageDTO;
-import network.JsonRequest;
-import session.ChatHistoryRequest;
 import socket.SocketClient;
 import service.ChatService;
 
@@ -14,7 +12,7 @@ import java.awt.event.ActionEvent;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public class StaffChatPanel extends JFrame {
+public class StaffChatPanel extends JPanel {
     private JList<String> customerList;
     private DefaultListModel<String> customerListModel;
     private JTextArea chatArea;
@@ -31,10 +29,8 @@ public class StaffChatPanel extends JFrame {
         initUI();
         startListening();
         loadCustomerList();
-        loadChatHistory();
     }
 
-    // BỎ thread phụ — SocketClient đã xử lý thread rồi
     private void startListening() {
         SocketClient.listenToServer(serverHost, serverPort, response -> {
             SwingUtilities.invokeLater(() -> {
@@ -49,48 +45,33 @@ public class StaffChatPanel extends JFrame {
                         handleChatHistory((List<MessageDTO>) response.getData());
                     }
                     case "GET_CUSTOMER_LIST" -> handleCustomerList((List<CustomerDTO>) response.getData());
+                    case "STAFF_JOINED" -> System.out.println("👨‍💼 Staff đã kết nối thành công!");
                     default -> System.out.println("Không xử lý được response: " + response.getStatus());
                 }
-
             });
         });
     }
-
-
 
     private void handleIncomingMessage(MessageDTO message) {
         String sender = message.getSender();
         String cleanSelected = getCleanSelectedCustomer();
 
-        // Nếu khách chưa có trong danh sách → thêm
         if (!customerListModel.contains(sender)) {
             customerListModel.addElement(sender);
         }
 
-        // ✅ Nếu đang chat đúng khách → hiển thị luôn
         if (cleanSelected != null && cleanSelected.equals(sender)) {
             ChatService.appendMessageToChat(chatArea, sender, message.getContent(), message.getSentAt());
             chatArea.setCaretPosition(chatArea.getDocument().getLength());
         } else {
-            // ✅ Chỉ đánh dấu người khác có tin nhắn mới — không load
             System.out.println("🔔 Tin nhắn từ khách khác: " + sender);
-            // 👉 Có thể highlight UI, hoặc làm gì đó nếu cần
         }
     }
-
-
 
     private String getCleanSelectedCustomer() {
         if (selectedCustomer == null) return null;
         return selectedCustomer.replace(" (*)", "").trim();
     }
-
-
-
-
-
-
-
 
     private void handleCustomerList(List<CustomerDTO> customers) {
         customerListModel.clear();
@@ -100,7 +81,7 @@ public class StaffChatPanel extends JFrame {
     }
 
     private void handleChatHistory(List<MessageDTO> messages) {
-        chatArea.setText(""); // Xóa trước
+        chatArea.setText("");
 
         if (messages == null || messages.isEmpty()) {
             chatArea.append("❌ Không có lịch sử tin nhắn.\n");
@@ -113,9 +94,6 @@ public class StaffChatPanel extends JFrame {
 
         chatArea.setCaretPosition(chatArea.getDocument().getLength());
     }
-
-
-
 
     private void sendMessage(ActionEvent e) {
         String messageText = inputField.getText().trim();
@@ -137,23 +115,16 @@ public class StaffChatPanel extends JFrame {
         ChatService.loadChatHistory(getCleanSelectedCustomer());
     }
 
-
     private void checkAndConnectSocket() {
         SocketClient.ensureConnected(serverHost, serverPort);
         if (!SocketClient.isConnected()) {
             JOptionPane.showMessageDialog(this, "❌ Không thể kết nối đến server!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-            System.exit(1);
         }
     }
 
     private void initUI() {
-        setTitle("Nhân viên - Giao tiếp khách hàng");
-        setSize(800, 600);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-
-        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
-        mainPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        setLayout(new BorderLayout(10, 10));
+        setBorder(new EmptyBorder(10, 10, 10, 10));
 
         customerListModel = new DefaultListModel<>();
         customerList = new JList<>(customerListModel);
@@ -165,18 +136,14 @@ public class StaffChatPanel extends JFrame {
 
                 selectedCustomer = newSelected;
 
-                // Xóa dấu (*)
                 int index = customerListModel.indexOf(newSelected);
                 if (index != -1 && customerListModel.get(index).contains("(*)")) {
                     customerListModel.set(index, newSelected);
                 }
 
-                // Load lại chat
                 ChatService.loadChatHistory(selectedCustomer);
             }
         });
-
-
 
         JScrollPane customerScrollPane = new JScrollPane(customerList);
         customerScrollPane.setPreferredSize(new Dimension(200, 0));
@@ -196,14 +163,8 @@ public class StaffChatPanel extends JFrame {
         inputPanel.add(inputField, BorderLayout.CENTER);
         inputPanel.add(sendButton, BorderLayout.EAST);
 
-        mainPanel.add(customerScrollPane, BorderLayout.WEST);
-        mainPanel.add(chatScrollPane, BorderLayout.CENTER);
-        mainPanel.add(inputPanel, BorderLayout.SOUTH);
-
-        setContentPane(mainPanel);
-    }
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new StaffChatPanel().setVisible(true));
+        add(customerScrollPane, BorderLayout.WEST);
+        add(chatScrollPane, BorderLayout.CENTER);
+        add(inputPanel, BorderLayout.SOUTH);
     }
 }

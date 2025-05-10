@@ -414,7 +414,7 @@ public class LoginUI extends JFrame {
 
     public static void main(String[] args) {
         try{
-            UIManager.setLookAndFeel(new FlatIntelliJLaf());
+            UIManager.setLookAndFeel(new FlatLightLaf());
         }catch (Exception e){
             e.printStackTrace();
         }

@@ -2,109 +2,168 @@ package view;
 
 import dto.MessageDTO;
 import service.CustomerMessageService;
+import util.RoundedTextArea;
+
+
 import javax.swing.*;
 import java.awt.*;
 
 
 public class ChatPanel extends JPanel {
 
-    private static JTextArea chatArea; // Khu vực hiển thị lịch sử chat
-    private JTextField inputField; // Khu vực nhập tin nhắn
-    private JButton sendButton; // Nút gửi tin nhắn
-    private CustomerMessageService messageService; // Service để giao tiếp với server
-    private String currentUsername; // Username của customer
+    private JPanel messageContainer; // Chứa toàn bộ tin nhắn
+    private JScrollPane scrollPane;
+    private JTextField inputField;
+    private JButton sendButton;
+    private CustomerMessageService messageService;
+    private String currentUsername;
     private static ChatPanel instance;
+
     public ChatPanel(String currentUsername) {
         this.currentUsername = currentUsername;
         this.messageService = new CustomerMessageService();
-        instance  = this; // Lưu instance để sử dụng trong RealTimeResponseHandler
-        initUI();              // Tạo giao diện
-        loadChatHistory();     // Lấy lịch sử tin nhắn từ server
-        CustomerMessageService.listenForMessages("localhost", 8080); // Địa chỉ và cổng của server
-    }
+        instance = this;
 
+        initUI();
+        loadChatHistory();
+        CustomerMessageService.listenForMessages("localhost", 8080);
+    }
 
     public static ChatPanel getInstance() {
         return instance;
     }
 
 
-    // Tạo giao diện
+
     private void initUI() {
         setLayout(new BorderLayout());
 
-        // Khu vực hiển thị tin nhắn
-        chatArea = new JTextArea();
-        chatArea.setEditable(false); // Không cho chỉnh sửa nội dung chat
-        JScrollPane scrollPane = new JScrollPane(chatArea);
+        messageContainer = new JPanel();
+        messageContainer.setLayout(new BoxLayout(messageContainer, BoxLayout.Y_AXIS));
+        messageContainer.setBackground(Color.WHITE);
+
+
+        JScrollPane scrollPane = new JScrollPane(messageContainer);
+        scrollPane.setBorder(null);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         add(scrollPane, BorderLayout.CENTER);
 
-        // Khu vực nhập tin nhắn
         inputField = new JTextField();
         sendButton = new JButton("Gửi");
 
-        // Tạo panel nhập tin nhắn
         JPanel inputPanel = new JPanel(new BorderLayout());
         inputPanel.add(inputField, BorderLayout.CENTER);
         inputPanel.add(sendButton, BorderLayout.EAST);
-
         add(inputPanel, BorderLayout.SOUTH);
 
-        // Sự kiện gửi tin nhắn khi nhấn nút "Gửi"
-        sendButton.addActionListener(e -> {
-            String content = inputField.getText().trim();
-            if (!content.isEmpty()) {
-                String toUsername = "staff"; // hoặc lấy từ lựa chọn user đang chat
-                messageService.sendMessage(currentUsername, toUsername, content);
-                inputField.setText("");
-            }
-        });
 
-        inputField.addActionListener(e -> sendMessage()); // Nhấn Enter cũng có thể gửi
-        inputField.addActionListener(e -> sendButton.doClick());
-
+        sendButton.addActionListener(e -> sendMessage());
+        inputField.addActionListener(e -> sendMessage());
     }
+
 
     private void sendMessage() {
         String content = inputField.getText().trim();
         if (content.isEmpty()) return;
 
-        String toUsername = "staff"; // Giả định là gửi tới nhân viên tên "staff"
+        String toUsername = "staff";
         messageService.sendMessage(currentUsername, toUsername, content);
 
-        appendMessage(currentUsername, content); // ✅ Thêm dòng này để hiển thị luôn
-
+        appendMessage(currentUsername, content); // Hiển thị luôn
         inputField.setText("");
     }
 
+    public void appendMessage(String sender, String message) {
+        SwingUtilities.invokeLater(() -> {
+            JPanel messagePanel = new JPanel(new FlowLayout(
+                    sender.equals(currentUsername) ? FlowLayout.RIGHT : FlowLayout.LEFT
+            ));
+            messagePanel.setOpaque(false); // trong suốt
+
+            Color bgColor = sender.equals(currentUsername) ? new Color(0xDCF8C6) : Color.WHITE;
+            RoundedTextArea messageLabel = new RoundedTextArea(message, bgColor);
 
 
-    // Nhận tin nhắn từ nhân viên và hiển thị trên giao diện
-    public void receiveMessage(MessageDTO message) {
-        appendMessage("Nhân viên", message.getContent());
-        chatArea.setCaretPosition(chatArea.getDocument().getLength());
+            // Màu nền và căn lề
+            if (sender.equals(currentUsername)) {
+                messageLabel.setBackground(new Color(0xDCF8C6)); // màu xanh nhạt
+            } else {
+                messageLabel.setBackground(new Color(0xFFFFFF)); // trắng
+            }
+
+            // Tính toán chiều rộng dựa theo độ dài nội dung + giới hạn max
+            int maxWidth = (int) (this.getWidth() * 0.6);
+            int minWidth = 50;
+            FontMetrics fm = messageLabel.getFontMetrics(messageLabel.getFont());
+            int textWidth = fm.stringWidth(message);
+            int bubbleWidth = Math.min(maxWidth, Math.max(minWidth, textWidth + 30));
+
+            messageLabel.setMaximumSize(new Dimension(bubbleWidth, Integer.MAX_VALUE));
+            messageLabel.setPreferredSize(new Dimension(bubbleWidth, messageLabel.getPreferredSize().height));
+            messageLabel.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1, true),
+                    BorderFactory.createEmptyBorder(8, 12, 8, 12)
+            ));
+
+            messagePanel.add(messageLabel);
+            messageContainer.add(messagePanel);
+            messageContainer.add(Box.createVerticalStrut(4));
+
+            messageContainer.revalidate();
+            messageContainer.repaint();
+
+            scrollToBottom();
+        });
     }
 
-    // Lấy lịch sử tin nhắn từ server (từ CustomerMessageService)
+
+    private void scrollToBottom() {
+        JScrollBar vertical = ((JScrollPane) this.getComponent(0)).getVerticalScrollBar();
+        SwingUtilities.invokeLater(() -> vertical.setValue(vertical.getMaximum()));
+    }
+
+
+
+
+
+    private JPanel createMessageBubble(String sender, String message) {
+        JPanel bubble = new JPanel();
+        bubble.setLayout(new BorderLayout());
+        bubble.setBackground(sender.equals(currentUsername) ? new Color(0xDCF8C6) : new Color(0xFFFFFF));
+        bubble.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+
+        JLabel messageLabel = new JLabel("<html><body style='width: 100%'>" + message + "</body></html>");
+        messageLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        messageLabel.setForeground(Color.BLACK);
+
+        bubble.add(messageLabel, BorderLayout.CENTER);
+
+        // Set max width to 60% screen
+        int maxWidth = (int) (getWidth() * 0.6);
+        messageLabel.setMaximumSize(new Dimension(maxWidth, Integer.MAX_VALUE));
+        bubble.setMaximumSize(new Dimension(maxWidth, Integer.MAX_VALUE));
+        bubble.setAlignmentX(sender.equals(currentUsername) ? Component.RIGHT_ALIGNMENT : Component.LEFT_ALIGNMENT);
+
+        // Rounded background
+        bubble.setOpaque(true);
+        bubble.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createEmptyBorder(4, 8, 4, 8),
+                BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1, true)
+        ));
+
+        return bubble;
+    }
+
+
+
     private void loadChatHistory() {
-        String toUsername = "staff"; // Cố định hoặc có thể chọn sau này
+        String toUsername = "staff";
         messageService.getChatHistory(currentUsername, toUsername, messages -> {
             SwingUtilities.invokeLater(() -> {
                 for (MessageDTO msg : messages) {
-                    String displayText = msg.getSender() + ": " + msg.getContent() + "\n";
-                    chatArea.append(displayText);
+                    appendMessage(msg.getSender(), msg.getContent());
                 }
             });
         });
     }
-
-
-    // Thêm tin nhắn mới vào khu vực hiển thị chat
-    public void appendMessage(String sender, String message) {
-        SwingUtilities.invokeLater(() -> {
-            chatArea.append(sender + ": " + message + "\n");
-            chatArea.setCaretPosition(chatArea.getDocument().getLength());
-        });
-    }
-
 }
