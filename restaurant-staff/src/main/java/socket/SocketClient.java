@@ -73,6 +73,7 @@ public class SocketClient {
     }
 
     // Lắng nghe phản hồi từ server trong một luồng riêng
+    // Ở listenToServer, đừng tạo thread mới nếu bạn đã có sẵn executor
     public static void listenToServer(String host, int port, ResponseHandler handler) {
         ensureConnected(host, port);
         if (!isConnected) {
@@ -85,14 +86,16 @@ public class SocketClient {
                 while (!socket.isClosed() && isConnected) {
                     JsonResponse response = readResponse();
                     if (response != null) {
-                        handler.handleResponse(response);
+                        handler.handleResponse(response); // gọi lại xử lý UI
                     }
                 }
             } catch (Exception e) {
                 System.err.println("[SocketClient] Lỗi khi lắng nghe từ server: " + e.getMessage());
+                e.printStackTrace();
             }
         });
     }
+
 
     // Đọc phản hồi từ server
     private static JsonResponse readResponse() {

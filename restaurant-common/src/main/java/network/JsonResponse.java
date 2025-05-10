@@ -16,6 +16,11 @@ public class JsonResponse implements Serializable {
         this.source = source;
     }
 
+    public JsonResponse(String staffJoined, String đãThamGiaThànhCông) {
+        this.status = staffJoined;
+        this.data = đãThamGiaThànhCông;
+    }
+
     public String getStatus() {
         return status;
     }

@@ -22,6 +22,13 @@ public class MessageDTO implements java.io.Serializable{
     public MessageDTO() {
     }
 
+    public MessageDTO(String username, String customerUsername, String content) {
+        this.sender = username;
+        this.receiver = customerUsername;
+        this.content = content;
+        this.sentAt = LocalDateTime.now().toString(); // Lưu thời gian gửi tin nhắn
+    }
+
     // Getters và Setters
     public String getSender() {
         return sender;

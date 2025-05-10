@@ -27,6 +27,18 @@ public class ClientHandler implements Runnable {
         this.oos.flush(); // Gửi header ngay trước khi sử dụng
         this.ois = new ObjectInputStream(socket.getInputStream());
     }
+    private void handleStaffJoin(JsonRequest request) {
+        String staffUsername = (String) request.getData();
+
+        System.out.println("[SERVER] Nhân viên " + staffUsername + " đã tham gia hệ thống.");
+
+        setUsername(staffUsername); // set username và put vào map
+
+        sendResponse(new JsonResponse("STAFF_JOINED", "Đã tham gia thành công"));
+    }
+
+
+
 
     public synchronized void sendResponse(JsonResponse response) {
         try {
@@ -63,6 +75,7 @@ public class ClientHandler implements Runnable {
                             System.out.println("🔍 Xử lý lệnh GET_CUSTOMER_LIST_WITH_MESSAGES");
                             messageController.handleGetCustomerListWithMessages(request, this);
                         }
+                        case "STAFF_JOIN" -> this.handleStaffJoin(request);
                         default -> System.err.println("⚠️ Lệnh không hợp lệ: " + request.getCommand());
                     }
                 } else {

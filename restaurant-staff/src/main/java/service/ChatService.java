@@ -9,10 +9,12 @@ import network.CommandType;
 import javax.swing.*;
 import java.time.LocalDateTime;
 
-
 public class ChatService {
     private static final String SERVER_HOST = "localhost";
     private static final int SERVER_PORT = 8080;
+
+    // ✅ Thêm biến lưu tên staff hiện tại
+    public static String currentStaffName = "staff"; // hoặc set sau khi đăng nhập
 
     // Gửi tin nhắn
     public static void sendMessage(String sender, String receiver, String content) {
@@ -26,18 +28,29 @@ public class ChatService {
         SocketClient.sendRequest(request, SERVER_HOST, SERVER_PORT);
     }
 
+    public static void notifyStaffOnline() {
+        JsonRequest request = new JsonRequest(CommandType.STAFF_JOIN.name(), currentStaffName);
+        SocketClient.sendRequest(request, SERVER_HOST, SERVER_PORT);
+    }
+
     // Lấy danh sách khách hàng
     public static void loadCustomerList() {
         JsonRequest request = new JsonRequest(CommandType.GET_CUSTOMER_LIST.name(), null);
         SocketClient.sendRequest(request, SERVER_HOST, SERVER_PORT);
     }
 
-    // Lấy lịch sử chat với khách hàng
+    // ✅ Lấy lịch sử chat với khách hàng (có truyền staff)
     public static void loadChatHistory(String selectedCustomer) {
-        if (selectedCustomer == null) return;
+        if (selectedCustomer == null || currentStaffName == null) {
+            System.out.println("❌ Thiếu customer hoặc staff khi lấy lịch sử chat.");
+            return;
+        }
 
         ChatHistoryRequest data = new ChatHistoryRequest();
         data.setCustomer(selectedCustomer);
+        data.setStaff(currentStaffName); // thêm staff vào
+
+        System.out.println("📤 Gửi yêu cầu lịch sử chat cho customer: " + selectedCustomer + ", staff: " + currentStaffName);
         JsonRequest request = new JsonRequest(CommandType.GET_CHAT_HISTORY.name(), data);
         SocketClient.sendRequest(request, SERVER_HOST, SERVER_PORT);
     }
@@ -46,14 +59,20 @@ public class ChatService {
     public static void handleIncomingMessage(MessageDTO message, DefaultListModel<String> customerListModel, JTextArea chatArea, String selectedCustomer) {
         String sender = message.getSender();
 
-        // Nếu là khách hàng mới, thêm vào danh sách khách hàng
+        // Nếu là khách mới → thêm
         if (!customerListModel.contains(sender)) {
             customerListModel.addElement(sender);
         }
 
-        // Nếu khách hàng được chọn là người gửi tin nhắn, hiển thị tin nhắn đó
+        // Nếu đang chọn đúng khách → hiển thị ngay
         if (selectedCustomer != null && selectedCustomer.equals(sender)) {
-            appendMessageToChat(chatArea, sender, message.getContent(), message.getSentAt());
+            ChatService.appendMessageToChat(chatArea, sender, message.getContent(), message.getSentAt());
+            chatArea.setCaretPosition(chatArea.getDocument().getLength()); // auto scroll
+        } else {
+            int index = customerListModel.indexOf(sender);
+            if (index != -1 && !customerListModel.get(index).contains("(*)")) {
+                customerListModel.set(index, sender + " (*)");
+            }
         }
     }
 
