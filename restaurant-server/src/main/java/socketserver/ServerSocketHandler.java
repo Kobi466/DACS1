@@ -13,6 +13,7 @@ public class ServerSocketHandler extends Thread {
 
     public ServerSocketHandler(int port) {
         this.port = port;
+
     }
 
     @Override
@@ -23,8 +24,7 @@ public class ServerSocketHandler extends Thread {
             while (true) {
                 Socket socket = serverSocket.accept();
                 ClientHandler handler = new ClientHandler(socket);
-                new Thread(handler).start(); // Bắt đầu xử lý client
-            }
+                new Thread(handler, "ClientThread-" + socket.getPort()).start();}
         } catch (IOException e) {
             e.printStackTrace();
         }

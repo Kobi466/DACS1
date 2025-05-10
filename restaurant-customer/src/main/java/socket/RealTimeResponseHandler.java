@@ -2,8 +2,13 @@ package socket;
 
 import dto.MessageDTO;
 import network.JsonResponse;
+import view.ChatPanel;
 
+import javax.swing.*;
 import java.util.List;
+
+//import static view.ChatPanel.appendMessage;
+
 
 public class RealTimeResponseHandler implements ResponseHandler {
 
@@ -32,13 +37,23 @@ public class RealTimeResponseHandler implements ResponseHandler {
     }
 
     private void updateChatUI(MessageDTO message) {
-        // Ví dụ: Hiển thị tin nhắn lên giao diện người dùng
-        System.out.println("[Client] Tin nhắn mới: " + message.getContent());
-        // TODO: Tích hợp với UI để hiển thị tin nhắn trên giao diện người dùng
+        SwingUtilities.invokeLater(() -> {
+            String sender = message.getSender();
+            String content = message.getContent();
+
+
+            // Giả sử ChatPanel có JTextArea tên là chatArea
+            ChatPanel.getInstance().appendMessage("staff",content);
+        });
     }
 
+
     private void updateChatHistoryUI(List<MessageDTO> chatHistory) {
-        // TODO: Logic để hiển thị toàn bộ lịch sử chat trên giao diện
-        System.out.println("[Client] Cập nhật giao diện với lịch sử chat...");
+        SwingUtilities.invokeLater(() -> {
+            for (MessageDTO message : chatHistory) {
+                ChatPanel.getInstance().appendMessage(message.getSender(), message.getContent());
+            }
+        });
     }
+
 }

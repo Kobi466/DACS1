@@ -41,7 +41,6 @@ public class LoginUI extends JFrame {
         listPass = new ArrayList<>();
         add(panel);
         SocketClient.connect("localhost", 8080);
-
 // Bắt đầu lắng nghe các phản hồi từ server
 //        CustomerMessageService messageService = new CustomerMessageService();
 //        messageService.listenForMessages("localhost", 8080);

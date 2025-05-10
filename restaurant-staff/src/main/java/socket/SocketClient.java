@@ -14,20 +14,12 @@ public class SocketClient {
     private static Socket socket;
     private static ObjectOutputStream oos;
     private static ObjectInputStream ois;
+    private static boolean isConnected = false;
 
-    // Khởi tạo executorService ngay từ đầu
+    // ExecutorService để xử lý các yêu cầu từ server
     private static final ExecutorService executorService = Executors.newSingleThreadExecutor();
-    private static boolean isConnected;
 
-    public SocketClient() {
-        isConnected = false;
-    }
-
-    /**
-     * Kết nối đến server
-     * @param host Host (hostname hoặc IP của server)
-     * @param port Port của server
-     */
+    // Kết nối đến server
     public static void connect(String host, int port) {
         if (isConnected) {
             System.err.println("[SocketClient] Đã kết nối trước đó, không cần kết nối lại!");
@@ -43,24 +35,25 @@ public class SocketClient {
             System.out.println("[SocketClient] Kết nối thành công đến server tại " + host + ":" + port);
         } catch (IOException e) {
             System.err.println("[SocketClient] Lỗi khi kết nối đến server: " + e.getMessage());
-            isConnected = false; // Đảm bảo trạng thái kết nối được đặt chính xác
+            isConnected = false;
         }
     }
 
+    // Đảm bảo kết nối nếu chưa có
     public static void ensureConnected(String host, int port) {
         if (!isConnected()) {
-            System.out.println("[SocketClient] Không có kết nối, đang cố gắng kết nối lại...");
             connect(host, port);
         }
     }
 
-    /**
-     * Gửi request tới server
-     * @param request JsonRequest để gửi
-     */
-    public static void sendRequest(JsonRequest request, String host, int port) {
-        ensureConnected(host, port); // Đảm bảo kết nối trước khi gửi request
+    // Kiểm tra trạng thái kết nối
+    public static boolean isConnected() {
+        return isConnected && socket != null && !socket.isClosed();
+    }
 
+    // Gửi yêu cầu đến server
+    public static void sendRequest(JsonRequest request, String host, int port) {
+        ensureConnected(host, port);
         if (!isConnected) {
             System.err.println("[SocketClient] Vẫn không thể gửi request do không có kết nối!");
             return;
@@ -79,17 +72,10 @@ public class SocketClient {
         }
     }
 
-    /**
-     * Lắng nghe phản hồi từ server (đảm bảo trạng thái kết nối trước khi bắt đầu lắng nghe)
-     * @param handler Xử lý phản hồi từ server thông qua handler
-     */
+    // Lắng nghe phản hồi từ server trong một luồng riêng
     public static void listenToServer(String host, int port, ResponseHandler handler) {
-        if (!isConnected()) {
-            System.err.println("[SocketClient] Kết nối đến server chưa được thiết lập, không thể lắng nghe.");
-            connect(host, port); // Thử kết nối lại
-        }
-
-        if (!isConnected()) {
+        ensureConnected(host, port);
+        if (!isConnected) {
             System.err.println("[SocketClient] Không thể bắt đầu lắng nghe do chưa kết nối đến server!");
             return;
         }
@@ -103,55 +89,38 @@ public class SocketClient {
                     }
                 }
             } catch (Exception e) {
-                System.err.println("[SocketClient] Lỗi trong khi lắng nghe server: " + e.getMessage());
+                System.err.println("[SocketClient] Lỗi khi lắng nghe từ server: " + e.getMessage());
             }
         });
     }
 
-    /**
-     * Kiểm tra trạng thái kết nối của client
-     * @return true nếu đang kết nối thành công
-     */
-    public static boolean isConnected() {
-        return isConnected && socket != null && !socket.isClosed();
+    // Đọc phản hồi từ server
+    private static JsonResponse readResponse() {
+        try {
+            if (ois != null) {
+                return (JsonResponse) ois.readObject();
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println("[SocketClient] Lỗi khi nhận dữ liệu từ server: " + e.getMessage());
+        }
+        return null;
     }
 
-    /**
-     * Đóng kết nối với server
-     */
-    public static void close() {
+    // Đóng kết nối
+    public static void closeConnection() {
         try {
             if (ois != null) ois.close();
             if (oos != null) oos.close();
             if (socket != null) socket.close();
             isConnected = false;
-            System.out.println("[SocketClient] Đã đóng kết nối tới server!");
+            System.out.println("[SocketClient] Đã đóng kết nối.");
         } catch (IOException e) {
             System.err.println("[SocketClient] Lỗi khi đóng kết nối: " + e.getMessage());
         }
     }
 
-    /**
-     * Đọc phản hồi từ server
-     * @return JsonResponse, hoặc null nếu có lỗi
-     */
-    public static JsonResponse readResponse() {
-        try {
-            if (!isConnected || ois == null) {
-                System.err.println("[SocketClient] Không thể đọc phản hồi do kết nối chưa thiết lập!");
-                return null;
-            }
-
-            Object obj = ois.readObject();
-            if (obj instanceof JsonResponse response) {
-                System.out.println("[SocketClient] Đã nhận phản hồi: " + response.getStatus());
-                return response;
-            } else {
-                System.err.println("[SocketClient] Format phản hồi không hợp lệ!");
-            }
-        } catch (IOException | ClassNotFoundException e) {
-            System.err.println("[SocketClient] Lỗi khi đọc phản hồi: " + e.getMessage());
-        }
-        return null;
+    // Xử lý phản hồi từ server
+    public interface ResponseHandler {
+        void handleResponse(JsonResponse response);
     }
 }

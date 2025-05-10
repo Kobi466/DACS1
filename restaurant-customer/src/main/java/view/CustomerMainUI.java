@@ -12,7 +12,6 @@ public class CustomerMainUI extends JFrame {
 
         JTabbedPane tabs = new JTabbedPane();
         tabs.add("💬 Nhắn với nhà hàng", new ChatPanel(username));
-        // Bạn có thể thêm tab khác sau
 
         add(tabs);
     }

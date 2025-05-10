@@ -4,6 +4,7 @@ import session.ChatHistoryRequest;
 import dto.MessageDTO;
 import network.JsonRequest;
 import network.JsonResponse;
+import socket.RealTimeResponseHandler;
 import socket.SocketClient;
 import session.SessionManager;
 
@@ -55,7 +56,12 @@ public class CustomerMessageService {
         } else {
             System.err.println("❌ [Client] Không nhận được phản hồi hợp lệ hoặc lỗi load chat history.");
         }
-    }public void listenForMessages(String host, int port) {
-//        SocketClient.listenToServer( new RealTimeResponseHandler());
     }
+    public static void listenForMessages(String host, int port) {
+        if (!SocketClient.isConnected()) {
+            SocketClient.connect(host, port);
+        }
+        SocketClient.listenToServer(new RealTimeResponseHandler());
+    }
+
 }

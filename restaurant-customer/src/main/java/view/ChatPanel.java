@@ -2,25 +2,32 @@ package view;
 
 import dto.MessageDTO;
 import service.CustomerMessageService;
-import session.SessionManager; // Thêm import cho SessionManager
-
 import javax.swing.*;
 import java.awt.*;
 
 
 public class ChatPanel extends JPanel {
 
-    private JTextArea chatArea; // Khu vực hiển thị lịch sử chat
+    private static JTextArea chatArea; // Khu vực hiển thị lịch sử chat
     private JTextField inputField; // Khu vực nhập tin nhắn
     private JButton sendButton; // Nút gửi tin nhắn
     private CustomerMessageService messageService; // Service để giao tiếp với server
     private String currentUsername; // Username của customer
+    private static ChatPanel instance;
     public ChatPanel(String currentUsername) {
         this.currentUsername = currentUsername;
         this.messageService = new CustomerMessageService();
+        instance  = this; // Lưu instance để sử dụng trong RealTimeResponseHandler
         initUI();              // Tạo giao diện
         loadChatHistory();     // Lấy lịch sử tin nhắn từ server
+        CustomerMessageService.listenForMessages("localhost", 8080); // Địa chỉ và cổng của server
     }
+
+
+    public static ChatPanel getInstance() {
+        return instance;
+    }
+
 
     // Tạo giao diện
     private void initUI() {
@@ -44,7 +51,15 @@ public class ChatPanel extends JPanel {
         add(inputPanel, BorderLayout.SOUTH);
 
         // Sự kiện gửi tin nhắn khi nhấn nút "Gửi"
-        sendButton.addActionListener(e -> sendMessage());
+        sendButton.addActionListener(e -> {
+            String content = inputField.getText().trim();
+            if (!content.isEmpty()) {
+                String toUsername = "staff"; // hoặc lấy từ lựa chọn user đang chat
+                messageService.sendMessage(currentUsername, toUsername, content);
+                inputField.setText("");
+            }
+        });
+
         inputField.addActionListener(e -> sendMessage()); // Nhấn Enter cũng có thể gửi
         inputField.addActionListener(e -> sendButton.doClick());
 
@@ -52,24 +67,17 @@ public class ChatPanel extends JPanel {
 
     private void sendMessage() {
         String content = inputField.getText().trim();
-        if (content.isEmpty()) return; // Không gửi khi tin nhắn trống
+        if (content.isEmpty()) return;
 
-        // Check if user is logged in
-        if (!SessionManager.instance().isLoggedIn()) {
-            JOptionPane.showMessageDialog(this,
-                    "Vui lòng đăng nhập trước khi gửi tin nhắn!",
-                    "Lỗi phiên làm việc",
-                    JOptionPane.ERROR_MESSAGE);
-            return;
-        }
+        String toUsername = "staff"; // Giả định là gửi tới nhân viên tên "staff"
+        messageService.sendMessage(currentUsername, toUsername, content);
 
-        // Correct the method call by removing `customerId`
-        messageService.sendMessage(currentUsername, "staff", content);
+        appendMessage(currentUsername, content); // ✅ Thêm dòng này để hiển thị luôn
 
-        // Hiển thị tin nhắn trong giao diện
-        appendMessage("Bạn", content);
-        inputField.setText(""); // Xóa nội dung sau khi gửi
+        inputField.setText("");
     }
+
+
 
     // Nhận tin nhắn từ nhân viên và hiển thị trên giao diện
     public void receiveMessage(MessageDTO message) {
@@ -79,23 +87,24 @@ public class ChatPanel extends JPanel {
 
     // Lấy lịch sử tin nhắn từ server (từ CustomerMessageService)
     private void loadChatHistory() {
-        int customerId = SessionManager.instance().getCustomerId();
-        if (customerId <= 0) {
-            System.err.println("❌ [Client] Không thể lấy lịch sử chat, customerId không hợp lệ");
-            return;
-        }
-
-        System.out.println("🟢 Debug: Lấy lịch sử chat giữa " + currentUsername + " và staff.");
-        messageService.getChatHistory(currentUsername, "staff", messages -> {
-            for (MessageDTO message : messages) {
-                String sender = message.getSender().equals(currentUsername) ? "Bạn" : "Nhân viên";
-                appendMessage(sender, message.getContent());
-            }
+        String toUsername = "staff"; // Cố định hoặc có thể chọn sau này
+        messageService.getChatHistory(currentUsername, toUsername, messages -> {
+            SwingUtilities.invokeLater(() -> {
+                for (MessageDTO msg : messages) {
+                    String displayText = msg.getSender() + ": " + msg.getContent() + "\n";
+                    chatArea.append(displayText);
+                }
+            });
         });
     }
 
+
     // Thêm tin nhắn mới vào khu vực hiển thị chat
-    private void appendMessage(String sender, String message) {
-        chatArea.append(sender + ": " + message + "\n");
+    public void appendMessage(String sender, String message) {
+        SwingUtilities.invokeLater(() -> {
+            chatArea.append(sender + ": " + message + "\n");
+            chatArea.setCaretPosition(chatArea.getDocument().getLength());
+        });
     }
+
 }
