@@ -13,7 +13,13 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MessageDAO {
+public class MessageDAO extends AbstractDAO<Message, Integer> implements DAOInterface<Message, Integer>{
+    public MessageDAO() {
+        super(Message.class);
+    }
+    public static MessageDAO getInstance(){
+        return new MessageDAO();
+    }
     public static boolean insertMessage(MessageDTO messageDTO) {
         Transaction transaction = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {

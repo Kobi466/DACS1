@@ -3,8 +3,10 @@ package socketserver;
 import controller.LoginController;
 import controller.MessageController;
 import dto.MessageDTO;
+import dto.ReservationOrderDTO;
 import network.JsonRequest;
 import network.JsonResponse;
+import service.ReservationOrderCombinedService;
 
 import java.io.*;
 import java.net.Socket;
@@ -36,9 +38,31 @@ public class ClientHandler implements Runnable {
 
         sendResponse(new JsonResponse("STAFF_JOINED", "Đã tham gia thành công"));
     }
+    private void handleReserveAndOrder(JsonRequest request) {
+        try {
+            // Ép kiểu dữ liệu DTO gửi từ client
+            ReservationOrderDTO dto = (ReservationOrderDTO) request.getData();
+
+            // Gọi service để xử lý đặt bàn và gọi món
+            ReservationOrderCombinedService service = new ReservationOrderCombinedService();
+            service.processReservationOrder(dto);
+            System.out.println("🛠 DTO nhận được: ");
+            System.out.println("ID: " + dto.getId());
+            System.out.println("Table: " + dto.getTableCode());
+            System.out.println("Time: " + dto.getBookingTime());
+            System.out.println("Items: ");
+            dto.getItems().forEach(i -> System.out.println("- " + i.getItemName() + " x " + i.getQuantity()));
 
 
+            // Phản hồi thành công
+            sendResponse(new JsonResponse("RESERVE_AND_ORDER_SUCCESS", "Đặt bàn và gọi món thành công ✅"));
+            System.out.println("✅ Đã xử lý đặt bàn và gọi món cho khách");
 
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendResponse(new JsonResponse("RESERVE_AND_ORDER_FAILED", "❌ Thất bại: " + e.getMessage()));
+        }
+    }
 
     public synchronized void sendResponse(JsonResponse response) {
         try {
@@ -76,6 +100,8 @@ public class ClientHandler implements Runnable {
                             messageController.handleGetCustomerListWithMessages(request, this);
                         }
                         case "STAFF_JOIN" -> this.handleStaffJoin(request);
+                        case "RESERVE_AND_ORDER" -> handleReserveAndOrder(request);
+
                         default -> System.err.println("⚠️ Lệnh không hợp lệ: " + request.getCommand());
                     }
                 } else {

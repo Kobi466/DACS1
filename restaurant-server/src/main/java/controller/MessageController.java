@@ -1,6 +1,7 @@
 package controller;
 
 import dto.CustomerDTO;
+import service.ReservationOrderCombinedService;
 import session.ChatHistoryRequest;
 import dto.MessageDTO;
 import network.JsonRequest;
@@ -8,11 +9,14 @@ import network.JsonResponse;
 import service.MessageService;
 import socketserver.ClientHandler;
 import util.JacksonUtils;
+import util.ReservationOrderParser;
+
 
 import java.util.List;
 
 public class MessageController {
     private final MessageService messageService = new MessageService();
+    private final ReservationOrderCombinedService reservationOrderService = new ReservationOrderCombinedService();
 
     public void handleSendMessage(JsonRequest request, ClientHandler senderHandler) {
         try {
@@ -34,7 +38,6 @@ public class MessageController {
 
             if (success) {
                 senderHandler.sendResponse(new JsonResponse("MESSAGE_SENT", "Message saved successfully", "server"));
-
                 // Phát tin nhắn real-time tới receiver
                 senderHandler.broadcastMessage(messageDTO);
             } else {
@@ -136,5 +139,4 @@ public class MessageController {
             senderHandler.sendResponse(new JsonResponse("ERROR", "Failed to get customer list with messages", "server"));
         }
     }
-
 }

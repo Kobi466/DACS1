@@ -1,5 +1,6 @@
 package service;
 
+import dto.ReservationOrderDTO;
 import session.ChatHistoryRequest;
 import dto.MessageDTO;
 import network.JsonRequest;
@@ -7,8 +8,10 @@ import network.JsonResponse;
 import socket.RealTimeResponseHandler;
 import socket.SocketClient;
 import session.SessionManager;
+import util.ReservationOrderParser;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -22,7 +25,6 @@ public class CustomerMessageService {
             System.err.println("❌ [Client] Không thể gửi tin nhắn, customerId không hợp lệ");
             return;
         }
-
         MessageDTO message = new MessageDTO(
                 fromUsername,
                 toUsername,
@@ -32,7 +34,15 @@ public class CustomerMessageService {
         );
 
         JsonRequest request = new JsonRequest("SEND_MESSAGE", message, fromUsername);
-        SocketClient.sendRequest(request); // Địa chỉ và cổng của server
+        SocketClient.sendRequest(request); // Địa chỉ và cổng của server// Kiểm tra nếu tin nhắn có chứa từ khóa đặt bàn thì gửi yêu cầu đặt bàn & món
+        if (content.toLowerCase().contains("đặt bàn")) {
+            ReservationOrderDTO dto = ReservationOrderParser.parse(customerId, content);
+
+            // Gửi thêm request RESERVE_AND_ORDER
+            JsonRequest reserveRequest = new JsonRequest("RESERVE_AND_ORDER", dto);
+            SocketClient.sendRequest(reserveRequest);
+        }
+
     }
 
     // Lấy lịch sử tin nhắn giữa Customer và Staff

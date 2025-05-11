@@ -157,11 +157,31 @@ public class StaffChatPanel extends JPanel {
         inputField = new JTextField();
         sendButton = new JButton("Gửi");
         sendButton.addActionListener(this::sendMessage);
+        JButton suggestBtn = new JButton("💡 Gợi ý");
+        suggestBtn.addActionListener(e -> {
+            JPopupMenu menu = new JPopupMenu();
+            String[] suggestions = {
+                    "Chào anh/chị, nhà hàng em có thể giúp gì ạ?",
+                    "Anh/chị muốn đặt bàn lúc mấy giờ ạ?",
+                    "Hiện tại món đó đang còn sẵn ạ!",
+                    "Em đã xác nhận đơn hàng, cảm ơn anh/chị."
+            };
+
+            for (String s : suggestions) {
+                JMenuItem item = new JMenuItem(s);
+                item.addActionListener(ev -> inputField.setText(s));
+                menu.add(item);
+            }
+
+            menu.show(suggestBtn, 0, suggestBtn.getHeight());
+        });
+
 
         JPanel inputPanel = new JPanel(new BorderLayout());
         inputPanel.setBorder(new EmptyBorder(10, 0, 0, 0));
         inputPanel.add(inputField, BorderLayout.CENTER);
         inputPanel.add(sendButton, BorderLayout.EAST);
+        inputPanel.add(suggestBtn, BorderLayout.WEST);
 
         add(customerScrollPane, BorderLayout.WEST);
         add(chatScrollPane, BorderLayout.CENTER);
