@@ -4,33 +4,30 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 
 public class OrderItemDTO implements Serializable {
-    private static final long serialVersionUID = 1L; // Thêm serialVersionUID để đảm bảo tính tương thích khi serialize/deserialize
+    private static final long serialVersionUID = 1L;
 
-    private int orderId;
+    private String foodName;
     private int quantity;
-    private BigDecimal price;
-    private int menuItemId; // Trích ID từ MenuItemDTO
-    private int orderReferenceId; // Trích ID từ Order
+    private BigDecimal unitPrice;
+    private BigDecimal totalPrice;
 
+    // Constructors, Getters, Setters
     public OrderItemDTO() {
     }
 
-    public OrderItemDTO(int orderId, int quantity, BigDecimal price, int menuItemId, int orderReferenceId) {
-        this.orderId = orderId;
+    public OrderItemDTO(String name, int quantity, BigDecimal unitPrice, BigDecimal multiply) {
+        this.foodName = name;
         this.quantity = quantity;
-        this.price = price;
-        this.menuItemId = menuItemId;
-        this.orderReferenceId = orderReferenceId;
+        this.unitPrice = unitPrice;
+        this.totalPrice = multiply;
     }
 
-    // Getters and Setters
-
-    public int getOrderId() {
-        return orderId;
+    public String getFoodName() {
+        return foodName;
     }
 
-    public void setOrderId(int orderId) {
-        this.orderId = orderId;
+    public void setFoodName(String foodName) {
+        this.foodName = foodName;
     }
 
     public int getQuantity() {
@@ -41,27 +38,19 @@ public class OrderItemDTO implements Serializable {
         this.quantity = quantity;
     }
 
-    public BigDecimal getPrice() {
-        return price;
+    public BigDecimal getUnitPrice() {
+        return unitPrice;
     }
 
-    public void setPrice(BigDecimal price) {
-        this.price = price;
+    public void setUnitPrice(BigDecimal unitPrice) {
+        this.unitPrice = unitPrice;
     }
 
-    public int getMenuItemId() {
-        return menuItemId;
+    public BigDecimal getTotalPrice() {
+        return totalPrice;
     }
 
-    public void setMenuItemId(int menuItemId) {
-        this.menuItemId = menuItemId;
-    }
-
-    public int getOrderReferenceId() {
-        return orderReferenceId;
-    }
-
-    public void setOrderReferenceId(int orderReferenceId) {
-        this.orderReferenceId = orderReferenceId;
+    public void setTotalPrice(BigDecimal totalPrice) {
+        this.totalPrice = totalPrice;
     }
 }

@@ -11,6 +11,7 @@ import socketserver.ClientHandler;
 
 public class LoginController {
     private final CustomerService customerService;
+    static CustomerDTO customerDTO;
 
     public LoginController() {
         this.customerService = new CustomerService();
@@ -21,7 +22,7 @@ public class LoginController {
             ObjectMapper objectMapper = new ObjectMapper();
             LoginDTO loginDTO = objectMapper.convertValue(request.getData(), LoginDTO.class);
 
-            CustomerDTO customerDTO = customerService.login(loginDTO.getUsername(), loginDTO.getPassword());
+            customerDTO = customerService.login(loginDTO.getUsername(), loginDTO.getPassword());
 
             if (customerDTO != null) {
                 clientHandler.setUsername(customerDTO.getUserName());

@@ -2,9 +2,8 @@ package dto;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.List;
 
-public class OrderDTO implements Serializable {
+public class OrderSummaryDTO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private int orderId;
@@ -12,18 +11,22 @@ public class OrderDTO implements Serializable {
     private String customerPhone;
     private LocalDateTime orderDate;
     private double totalPrice;
-    private List<OrderItemDTO> items;
+    private OrderStatus status;
 
-    // Constructors, Getters, Setters
-    public OrderDTO() {
-    }
-
-    public OrderDTO(String userName, String sdt, LocalDateTime orderDate, double total, List<OrderItemDTO> itemDTOs) {
+    public OrderSummaryDTO(int orderId, String userName, String sdt, LocalDateTime orderDate, OrderStatus orderStatus) {
+        this.orderId = orderId;
         this.customerName = userName;
         this.customerPhone = sdt;
         this.orderDate = orderDate;
-        this.totalPrice = total;
-        this.items = itemDTOs;
+        this.status = orderStatus;
+    }
+
+    public enum OrderStatus {
+        CHO_XAC_NHAN, DANG_CHE_BIEN, DA_HOAN_THANH, DA_HUY, DA_XAC_NHAN, HOAN_THANH
+    }
+
+    // Constructors, Getters, Setters
+    public OrderSummaryDTO() {
     }
 
     public int getOrderId() {
@@ -66,11 +69,11 @@ public class OrderDTO implements Serializable {
         this.totalPrice = totalPrice;
     }
 
-    public List<OrderItemDTO> getItems() {
-        return items;
+    public OrderStatus getStatus() {
+        return status;
     }
 
-    public void setItems(List<OrderItemDTO> items) {
-        this.items = items;
+    public void setStatus(OrderStatus status) {
+        this.status = status;
     }
 }

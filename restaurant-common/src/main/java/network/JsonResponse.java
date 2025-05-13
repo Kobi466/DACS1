@@ -20,7 +20,10 @@ public class JsonResponse implements Serializable {
         this.status = staffJoined;
         this.data = đãThamGiaThànhCông;
     }
-
+    public JsonResponse(String status, Object data) {
+        this.status = status;
+        this.data = data;
+    }
     public String getStatus() {
         return status;
     }

@@ -2,6 +2,7 @@ package view;
 
 import dto.CustomerDTO;
 import dto.MessageDTO;
+import network.GlobalResponseRouter;
 import socket.SocketClient;
 import service.ChatService;
 
@@ -32,7 +33,7 @@ public class StaffChatPanel extends JPanel {
     }
 
     private void startListening() {
-        SocketClient.listenToServer(serverHost, serverPort, response -> {
+        GlobalResponseRouter.addListener(response -> {
             SwingUtilities.invokeLater(() -> {
                 switch (response.getStatus()) {
                     case "MESSAGE_RECEIVED", "NEW_MESSAGE" -> {

@@ -24,6 +24,10 @@ public class JsonRequest implements Serializable {
         this.data =  data;
     }
 
+    public JsonRequest(String command) {
+        this.command = command;
+    }
+
     public String getCommand() {
         return command;
     }

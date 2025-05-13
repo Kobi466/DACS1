@@ -29,7 +29,7 @@ public class ChatService {
     }
 
     public static void notifyStaffOnline() {
-        JsonRequest request = new JsonRequest(CommandType.STAFF_JOIN.name(), currentStaffName);
+        JsonRequest request = new JsonRequest(CommandType.STAFF_JOINED.name(), currentStaffName);
         SocketClient.sendRequest(request, SERVER_HOST, SERVER_PORT);
     }
 

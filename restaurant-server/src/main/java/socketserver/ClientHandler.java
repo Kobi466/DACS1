@@ -2,14 +2,15 @@ package socketserver;
 
 import controller.LoginController;
 import controller.MessageController;
+import controller.OrderController;
+import controller.ReservationOrderController;
 import dto.MessageDTO;
-import dto.ReservationOrderDTO;
 import network.JsonRequest;
 import network.JsonResponse;
-import service.ReservationOrderCombinedService;
 
 import java.io.*;
 import java.net.Socket;
+
 
 import static socketserver.ServerSocketHandler.clientMap;
 
@@ -19,6 +20,8 @@ public class ClientHandler implements Runnable {
     private final ObjectOutputStream oos;
     private final LoginController loginController = new LoginController();
     private final MessageController messageController = new MessageController();
+    private final OrderController orderController = new OrderController();
+    private final ReservationOrderController reservationOrderController = new ReservationOrderController();
     private String username;
 
     public ClientHandler(Socket socket) throws IOException {
@@ -38,29 +41,12 @@ public class ClientHandler implements Runnable {
 
         sendResponse(new JsonResponse("STAFF_JOINED", "Đã tham gia thành công"));
     }
-    private void handleReserveAndOrder(JsonRequest request) {
-        try {
-            // Ép kiểu dữ liệu DTO gửi từ client
-            ReservationOrderDTO dto = (ReservationOrderDTO) request.getData();
 
-            // Gọi service để xử lý đặt bàn và gọi món
-            ReservationOrderCombinedService service = new ReservationOrderCombinedService();
-            service.processReservationOrder(dto);
-            System.out.println("🛠 DTO nhận được: ");
-            System.out.println("ID: " + dto.getId());
-            System.out.println("Table: " + dto.getTableCode());
-            System.out.println("Time: " + dto.getBookingTime());
-            System.out.println("Items: ");
-            dto.getItems().forEach(i -> System.out.println("- " + i.getItemName() + " x " + i.getQuantity()));
-
-
-            // Phản hồi thành công
-            sendResponse(new JsonResponse("RESERVE_AND_ORDER_SUCCESS", "Đặt bàn và gọi món thành công ✅"));
-            System.out.println("✅ Đã xử lý đặt bàn và gọi món cho khách");
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            sendResponse(new JsonResponse("RESERVE_AND_ORDER_FAILED", "❌ Thất bại: " + e.getMessage()));
+    public static void broadcastToAllStaff(JsonResponse response) {
+        for (ClientHandler handler : clientMap.values()) {
+            if (handler.username != null && handler.username.startsWith("staff")) {
+                handler.sendResponse(response);
+            }
         }
     }
 
@@ -99,8 +85,17 @@ public class ClientHandler implements Runnable {
                             System.out.println("🔍 Xử lý lệnh GET_CUSTOMER_LIST_WITH_MESSAGES");
                             messageController.handleGetCustomerListWithMessages(request, this);
                         }
-                        case "STAFF_JOIN" -> this.handleStaffJoin(request);
-                        case "RESERVE_AND_ORDER" -> handleReserveAndOrder(request);
+                        case "STAFF_JOINED" -> this.handleStaffJoin(request);
+                        case "RESERVE_AND_ORDER" -> reservationOrderController.handleReserveAndOrder(request, this);
+                        case "GET_ORDERS" -> {
+                            System.out.println("🔍 Xử lý lệnh GET_ORDERS");
+                            orderController.getAllOrderSummaries(request, this);
+                        }
+                        case "GET_ORDER_ITEMS" -> {
+                            System.out.println("🔍 Xử lý lệnh GET_ORDER_ITEMS");
+                            orderController.getOrderItemsByOrderId(request, this);
+                        }
+
 
                         default -> System.err.println("⚠️ Lệnh không hợp lệ: " + request.getCommand());
                     }

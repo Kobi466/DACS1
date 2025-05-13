@@ -1,5 +1,6 @@
 package socket;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import network.JsonRequest;
 import network.JsonResponse;
 
@@ -105,9 +106,11 @@ public class SocketClient {
             }
         } catch (IOException | ClassNotFoundException e) {
             System.err.println("[SocketClient] Lỗi khi nhận dữ liệu từ server: " + e.getMessage());
+            isConnected = false; // Gợi ý thêm dòng này
         }
         return null;
     }
+
 
     // Đóng kết nối
     public static void closeConnection() {
@@ -124,6 +127,6 @@ public class SocketClient {
 
     // Xử lý phản hồi từ server
     public interface ResponseHandler {
-        void handleResponse(JsonResponse response);
+        void handleResponse(JsonResponse response) throws JsonProcessingException;
     }
 }

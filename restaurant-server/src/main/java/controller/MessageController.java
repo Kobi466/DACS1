@@ -16,7 +16,6 @@ import java.util.List;
 
 public class MessageController {
     private final MessageService messageService = new MessageService();
-    private final ReservationOrderCombinedService reservationOrderService = new ReservationOrderCombinedService();
 
     public void handleSendMessage(JsonRequest request, ClientHandler senderHandler) {
         try {
@@ -40,6 +39,7 @@ public class MessageController {
                 senderHandler.sendResponse(new JsonResponse("MESSAGE_SENT", "Message saved successfully", "server"));
                 // Phát tin nhắn real-time tới receiver
                 senderHandler.broadcastMessage(messageDTO);
+                System.out.println("📤 Gửi tin nhắn từ " + messageDTO.getSender() + " đến " + messageDTO.getReceiver());
             } else {
                 senderHandler.sendResponse(new JsonResponse("ERROR", "Cannot save message", "server"));
             }
