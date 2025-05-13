@@ -1,5 +1,6 @@
 package dto;
 
+import java.awt.*;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -22,7 +23,11 @@ public class OrderSummaryDTO implements Serializable {
     }
 
     public enum OrderStatus {
-        CHO_XAC_NHAN, DANG_CHE_BIEN, DA_HOAN_THANH, DA_HUY, DA_XAC_NHAN, HOAN_THANH
+        CHO_XAC_NHAN,     // Mới tạo, đang chờ nhân viên xác nhận
+        DA_XAC_NHAN,      // Đã được nhân viên xác nhận, chuẩn bị nấu
+        DANG_CHE_BIEN,    // Đang được nấu
+        HOAN_THANH,    // Đã nấu xong, chờ giao/khách nhận
+        DA_HUY;
     }
 
     // Constructors, Getters, Setters

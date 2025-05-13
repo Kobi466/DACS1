@@ -97,9 +97,10 @@ public class ClientHandler implements Runnable {
                         } case "NEW_ORDER-CREATED" -> {
                             System.out.println("🔍 Xử lý lệnh NEW_ORDER_CREATED");
                             orderController.getAllOrderSummaries(request, this);
+                        }case "UPDATE_ORDER_STATUS" -> {
+                            System.out.println("✏️ Xử lý lệnh UPDATE_ORDER_STATUS");
+                            orderController.updateOrderStatus(request, this);
                         }
-
-
                         default -> System.err.println("⚠️ Lệnh không hợp lệ: " + request.getCommand());
                     }
                 } else {

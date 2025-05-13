@@ -7,6 +7,7 @@ import dto.OrderSummaryDTO;
 import network.GlobalResponseRouter;
 import network.JsonResponse;
 import util.JacksonUtils;
+import util.OrderStatusRenderer;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -15,190 +16,228 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class OrderPanel extends JPanel {
-    private JTable table, detailTable;
-    private DefaultTableModel model, detailModel;
-    private final JButton btnXacNhan, btnHuy, btnHoanThanh;
+    private final JTable orderTable, detailTable;
+    private final DefaultTableModel orderModel, detailModel;
+    private final JButton btnConfirm, btnCancel, btnComplete, btnRefresh, btCheBien;
     private final OrderController controller;
 
     public OrderPanel() {
         this.controller = new OrderController(this);
         this.setLayout(new BorderLayout());
 
-        // === BẢNG ĐƠN HÀNG ===
-        model = new DefaultTableModel(new Object[]{"ID", "Tên Khách", "SĐT", "Thời gian", "Trạng thái"}, 0);
-        table = new JTable(model);
-        table.setRowHeight(30);
-        table.getColumnModel().getColumn(0).setMinWidth(0);
-        table.getColumnModel().getColumn(0).setMaxWidth(0);
-        table.getColumnModel().getColumn(0).setWidth(0);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        // ========== BẢNG ĐƠN HÀNG ==========
+        orderModel = createOrderTableModel();
+        orderTable = createOrderTable(orderModel);
+        add(new JScrollPane(orderTable), BorderLayout.CENTER);
 
-        // === PANEL DƯỚI: CHI TIẾT + NÚT ===
+        // ========== PANEL DƯỚI ==========
         JPanel bottomPanel = new JPanel(new BorderLayout());
 
-        detailModel = new DefaultTableModel(new Object[]{"Món ăn", "SL", "Đơn giá", "Tổng"}, 0);
-        detailTable = new JTable(detailModel);
-        detailTable.setRowHeight(28);
+        detailModel = createDetailTableModel();
+        detailTable = createDetailTable(detailModel);
         bottomPanel.add(new JScrollPane(detailTable), BorderLayout.CENTER);
 
-        // === PANEL BUTTON ===
+        // ========== BUTTON PANEL ==========
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        btnXacNhan = new JButton("✔ Xác nhận");
-        btnHuy = new JButton("✖ Huỷ");
-        btnHoanThanh = new JButton("✓ Hoàn tất");
-        buttonPanel.add(btnXacNhan);
-        buttonPanel.add(btnHuy);
-        buttonPanel.add(btnHoanThanh);
+        btnConfirm = createButton("✔ Xác nhận");
+        btnCancel = createButton("✖ Huỷ");
+        btnComplete = createButton("✓ Hoàn tất");
+        btCheBien = createButton("Đang chế biến");
+        btnRefresh = createButton("Làm mới", new Color(0x3498db), Color.WHITE);
+        buttonPanel.add(btnCancel);
+        buttonPanel.add(btnConfirm);
+        buttonPanel.add(btCheBien);
+        buttonPanel.add(btnComplete);
+        buttonPanel.add(btnRefresh);
         bottomPanel.add(buttonPanel, BorderLayout.SOUTH);
 
         add(bottomPanel, BorderLayout.SOUTH);
-        JButton refreshButton = new JButton("Làm mới");
-        refreshButton.setBackground(new Color(0x3498db));
-        refreshButton.setForeground(Color.WHITE);
-        refreshButton.setFocusPainted(false);
-        refreshButton.setFont(new Font("Arial", Font.BOLD, 14));
 
-// Thêm vào panel header
-        buttonPanel.add(refreshButton);
-        refreshButton.addActionListener(e -> {
-            controller.reloadOrders(); // gọi controller xử lý làm mới
-        });
-
-        // === ĐĂNG KÝ LẮNG NGHE + ACTION ===
+        // ========== SỰ KIỆN ==========
         registerListeners();
+        registerTableSelectionListener();
         registerButtonActions();
-        registerTableSelection();
 
         controller.loadOrders();
     }
-    public int getSelectedOrderRow() {
-        return table.getSelectedRow();
+
+    // ====================== TABLE MODEL ======================
+
+    private DefaultTableModel createOrderTableModel() {
+        return new DefaultTableModel(new Object[]{"ID", "Tên Khách", "SĐT", "Thời gian", "Trạng thái"}, 0) {
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
     }
 
-    public OrderSummaryDTO getOrderAt(int row) {
-        int modelRow = table.convertRowIndexToModel(row);
-        Object value = model.getValueAt(modelRow, 0); // lấy orderId
-        if (value instanceof Integer) {
-            int orderId = (Integer) value;
-            for (OrderSummaryDTO o : controller.getOrders()) {
-                if (o.getOrderId() == orderId) return o;
-            }
-        }
-        return null;
+    private JTable createOrderTable(DefaultTableModel model) {
+        JTable table = new JTable(model);
+        table.setRowHeight(30);
+        table.getColumnModel().getColumn(0).setMinWidth(0);
+        table.getColumnModel().getColumn(0).setMaxWidth(0);
+        table.setDefaultRenderer(Object.class, new OrderStatusRenderer());
+        return table;
     }
+
+    private DefaultTableModel createDetailTableModel() {
+        return new DefaultTableModel(new Object[]{"Món ăn", "SL", "Đơn giá", "Tổng"}, 0) {
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+    }
+
+    private JTable createDetailTable(DefaultTableModel model) {
+        JTable table = new JTable(model);
+        table.setRowHeight(28);
+        return table;
+    }
+
+    // ====================== BUTTON ======================
+
+    private JButton createButton(String text) {
+        return createButton(text, null, null);
+    }
+
+    private JButton createButton(String text, Color bg, Color fg) {
+        JButton button = new JButton(text);
+        if (bg != null) {
+            button.setBackground(bg);
+            button.setForeground(fg);
+            button.setFont(new Font("Arial", Font.BOLD, 14));
+            button.setFocusPainted(false);
+        }
+        return button;
+    }
+
+    // ====================== SỰ KIỆN ======================
+
     private void registerListeners() {
         GlobalResponseRouter.addListener(response -> {
             switch (response.getStatus()) {
                 case "GET_ORDERS_SUCCESS" -> {
                     List<OrderSummaryDTO> orders = (List<OrderSummaryDTO>) response.getData();
-                    controller.setOrders(orders); // thêm dòng này
+                    controller.setOrders(orders);
                     updateOrderTable(orders);
                     System.out.println("✅ Đã nhận danh sách đơn hàng.");
                 }
                 case "NEW_ORDER_CREATED" -> {
                     OrderSummaryDTO newOrder = JacksonUtils.getObjectMapper().convertValue(
-                            response.getData(), OrderSummaryDTO.class
-                    );
-
+                            response.getData(), OrderSummaryDTO.class);
                     controller.addOrder(newOrder);
                     updateOrderTable(controller.getOrders());
-
                     controller.loadOrderDetail(newOrder.getOrderId());
-
-
-                    System.out.println("🆕 Đơn hàng mới đã được thêm: " + newOrder.getCustomerName());
-                }case "GET_ORDER_ITEMS_SUCCESS" -> {
+                    System.out.println("🆕 Đơn hàng mới đã được thêm.");
+                    controller.reloadOrders();
+                }
+                case "GET_ORDER_ITEMS_SUCCESS" -> {
                     OrderDTO order = JacksonUtils.getObjectMapper().convertValue(
-                            response.getData(), OrderDTO.class
-                    );
-                    System.out.println("📦 order.getItems().size = " + order.getItems().size()); // debug
+                            response.getData(), OrderDTO.class);
                     updateOrderDetail(order);
                     System.out.println("✅ Đã nhận chi tiết đơn hàng.");
                 }
-
+                case "UPDATE_ORDER_STATUS" -> {
+                    OrderSummaryDTO order = JacksonUtils.getObjectMapper().convertValue(
+                            response.getData(), OrderSummaryDTO.class);
+                    controller.updateOrderStatus(order.getOrderId(), order.getStatus());
+                    controller.reloadOrders();
+                }
+                case "UPDATE_ORDER_STATUS_SUCCESS" -> {
+                    JOptionPane.showMessageDialog(null, "✅ Cập nhật trạng thái thành công.");
+                }
+                case "UPDATE_ORDER_STATUS_FAIL" -> {
+                    JOptionPane.showMessageDialog(null, "❌ Cập nhật trạng thái thất bại.");
+                }
                 default -> System.out.println("⚠️ Không hiểu phản hồi: " + response.getStatus());
             }
         });
     }
 
-    private void registerTableSelection() {
-        table.getSelectionModel().addListSelectionListener(e -> {
+    private void registerTableSelectionListener() {
+        orderTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
-                SwingUtilities.invokeLater(() -> {
-                    int viewRow = table.getSelectedRow();
-                    System.out.println(">>> selection listener fired, viewRow=" + viewRow);
-                    Integer orderId = getSelectedOrderId();
-                    System.out.println(">>> getSelectedOrderId() => " + orderId);
-                    if (orderId != null) {
-                        System.out.println(">>> calling controller.loadOrderDetail(" + orderId + ")");
-                        controller.loadOrderDetail(orderId);
-                    } else {
-                        detailModel.setRowCount(0);
-                    }
-                });
+                Integer orderId = getSelectedOrderId();
+                if (orderId != null) {
+                    controller.loadOrderDetail(orderId);
+                } else {
+                    detailModel.setRowCount(0);
+                }
             }
         });
     }
 
     private void registerButtonActions() {
-        btnXacNhan.addActionListener(e -> {
-            Integer orderId = getSelectedOrderId();
-//            if (orderId != null) controller.updateOrderStatus(orderId, "CONFIRMED");
-        });
+        // Làm mới danh sách
+        btnRefresh.addActionListener(e -> controller.reloadOrders());
 
-        btnHuy.addActionListener(e -> {
-            Integer orderId = getSelectedOrderId();
-//            if (orderId != null) controller.updateOrderStatus(orderId, "CANCELLED");
-        });
+        // Xác nhận đơn hàng: CHỜ XÁC NHẬN -> ĐÃ XÁC NHẬN
+        btnConfirm.addActionListener(e -> {
+            OrderSummaryDTO order = getSelectedOrder();
+            if (order == null) return;
 
-        btnHoanThanh.addActionListener(e -> {
-            Integer orderId = getSelectedOrderId();
-//            if (orderId != null) controller.updateOrderStatus(orderId, "COMPLETED");
-        });
-    }
-
-    private Integer getSelectedOrderId() {
-        int viewRow = table.getSelectedRow();
-        if (viewRow >= 0) {
-            int modelRow = table.convertRowIndexToModel(viewRow); // CHÍNH XÁC hơn
-            Object value = model.getValueAt(modelRow, 0); // Cột 0 là orderId
-            if (value instanceof Integer) return (Integer) value;
-            try {
-                return Integer.parseInt(value.toString());
-            } catch (NumberFormatException e) {
-                showError("Không lấy được mã đơn hàng.");
+            if (order.getStatus() == OrderSummaryDTO.OrderStatus.CHO_XAC_NHAN) {
+                controller.updateOrderStatus(order.getOrderId(), OrderSummaryDTO.OrderStatus.DA_XAC_NHAN);
+            } else {
+                showError("❌ Chỉ có thể xác nhận đơn đang ở trạng thái 'Chờ xác nhận'.");
             }
-        }
-        return null;
+        });
+
+        // Chế biến đơn hàng: ĐÃ XÁC NHẬN -> ĐANG CHẾ BIẾN
+        btCheBien.addActionListener(e -> {
+            OrderSummaryDTO order = getSelectedOrder();
+            if (order == null) return;
+
+            if (order.getStatus() == OrderSummaryDTO.OrderStatus.DA_XAC_NHAN) {
+                controller.updateOrderStatus(order.getOrderId(), OrderSummaryDTO.OrderStatus.DANG_CHE_BIEN);
+            } else {
+                showError("❌ Chỉ có thể chuyển sang 'Đang chế biến' từ đơn 'Đã xác nhận'.");
+            }
+        });
+
+        // Hoàn tất đơn hàng: ĐANG CHẾ BIẾN -> HOÀN THÀNH
+        btnComplete.addActionListener(e -> {
+            OrderSummaryDTO order = getSelectedOrder();
+            if (order == null) return;
+
+            if (order.getStatus() == OrderSummaryDTO.OrderStatus.DANG_CHE_BIEN) {
+                controller.updateOrderStatus(order.getOrderId(), OrderSummaryDTO.OrderStatus.HOAN_THANH);
+            } else {
+                showError("❌ Chỉ có thể hoàn tất đơn đang ở trạng thái 'Đang chế biến'.");
+            }
+        });
+
+        // Huỷ đơn hàng: chỉ cho huỷ nếu đang CHỜ XÁC NHẬN hoặc ĐÃ XÁC NHẬN
+        btnCancel.addActionListener(e -> {
+            OrderSummaryDTO order = getSelectedOrder();
+            if (order == null) return;
+
+            OrderSummaryDTO.OrderStatus status = order.getStatus();
+            if (status == OrderSummaryDTO.OrderStatus.CHO_XAC_NHAN ||
+                    status == OrderSummaryDTO.OrderStatus.DA_XAC_NHAN) {
+                controller.updateOrderStatus(order.getOrderId(), OrderSummaryDTO.OrderStatus.DA_HUY);
+            } else {
+                showError("❌ Chỉ có thể huỷ đơn ở trạng thái 'Chờ xác nhận' hoặc 'Đã xác nhận'.");
+            }
+        });
     }
+
+
+    // ====================== CẬP NHẬT GIAO DIỆN ======================
 
     public void updateOrderTable(List<OrderSummaryDTO> orders) {
-        OrderSummaryDTO orderSummaryDTO = new OrderSummaryDTO();
-//        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
-//        String formattedTime = orderSummaryDTO.getOrderDate().format(formatter);
         SwingUtilities.invokeLater(() -> {
-            model.setRowCount(0);
-            for (OrderSummaryDTO order : orders) {
-                model.addRow(new Object[]{
-                        order.getOrderId(),
-                        order.getCustomerName(),
-                        order.getCustomerPhone(),
-                        order.getOrderDate(),
-                        order.getStatus().name()
+            orderModel.setRowCount(0);
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
+            for (OrderSummaryDTO o : orders) {
+                orderModel.addRow(new Object[]{
+                        o.getOrderId(),
+                        o.getCustomerName(),
+                        o.getCustomerPhone(),
+                        o.getOrderDate().format(fmt),
+                        o.getStatus().name()
                 });
             }
-        });
-    }
-
-    private void addOrderToTable(OrderSummaryDTO order) {
-        SwingUtilities.invokeLater(() -> {
-            model.addRow(new Object[]{
-                    order.getOrderId(),
-                    order.getCustomerName(),
-                    order.getCustomerPhone(),
-                    order.getOrderDate(),
-                    order.getStatus().name()
-            });
         });
     }
 
@@ -215,22 +254,39 @@ public class OrderPanel extends JPanel {
             }
         });
     }
-    public void updateOrderItemTable(List<OrderItemDTO> items) {
-        DefaultTableModel model = (DefaultTableModel) detailTable.getModel();
-        detailModel.setRowCount(0); // 🔴 clear bảng trước
 
-        for (OrderItemDTO item : items) {
-            model.addRow(new Object[]{
-                    item.getFoodName(),
-                    item.getQuantity(),
-                    item.getUnitPrice(),
-                    item.getTotalPrice()
-            });
+    // ====================== TIỆN ÍCH ======================
+
+    private Integer getSelectedOrderId() {
+        int row = orderTable.getSelectedRow();
+        if (row >= 0) {
+            Object value = orderModel.getValueAt(orderTable.convertRowIndexToModel(row), 0);
+            if (value instanceof Integer) return (Integer) value;
+            try {
+                return Integer.parseInt(value.toString());
+            } catch (Exception e) {
+                showError("Lỗi lấy ID đơn hàng.");
+            }
         }
+        return null;
     }
 
+    private OrderSummaryDTO getSelectedOrder() {
+        int row = orderTable.getSelectedRow();
+        if (row >= 0) {
+            int modelRow = orderTable.convertRowIndexToModel(row);
+            int orderId = (int) orderModel.getValueAt(modelRow, 0);
+            return controller.getOrderById(orderId);
+        }
+        showError("Vui lòng chọn một đơn hàng.");
+        return null;
+    }
 
-    public void showError(String message) {
-        JOptionPane.showMessageDialog(this, message, "Lỗi", JOptionPane.ERROR_MESSAGE);
+    public void showError(String msg) {
+        JOptionPane.showMessageDialog(this, msg, "Lỗi", JOptionPane.ERROR_MESSAGE);
+    }
+
+    public void showMessage(String msg) {
+        JOptionPane.showMessageDialog(this, msg, "Thông báo", JOptionPane.INFORMATION_MESSAGE);
     }
 }

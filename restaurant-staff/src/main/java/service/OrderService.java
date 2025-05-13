@@ -9,6 +9,7 @@ import socket.SocketClient;
 import util.JSONUtil;
 
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 public class OrderService {
@@ -31,6 +32,21 @@ public class OrderService {
             }
         });
     }
+    public void updateOrderStatus(int orderId, OrderSummaryDTO.OrderStatus status, Runnable onSuccess, Consumer<String> onError) {
+        JsonRequest request = new JsonRequest(CommandType.UPDATE_ORDER_STATUS.name(),
+                Map.of("orderId", orderId, "status", status.name()));
+        SocketClient.sendRequest(request, HOST, PORT);
+        System.out.println("Gửi UPDATE_ORDER_STATUS: orderId=" + orderId + ", status=" + status.name());
+        SocketClient.listenToServer(HOST, PORT, response -> {
+            String responseStatus = response.getStatus();
+            if (CommandType.UPDATE_ORDER_STATUS_SUCCESS.name().equals(responseStatus)) {
+                onSuccess.run();
+            } else if (CommandType.UPDATE_ORDER_STATUS_FAIL.name().equals(responseStatus)) {
+                onError.accept("❌ Cập nhật trạng thái đơn hàng thất bại.");
+            }
+        });
+    }
+
 
     public void fetchOrderDetail(int orderId, Consumer<OrderDTO> onSuccess, Consumer<String> onError) {
         JsonRequest request = new JsonRequest(CommandType.GET_ORDER_ITEMS.name(), orderId);

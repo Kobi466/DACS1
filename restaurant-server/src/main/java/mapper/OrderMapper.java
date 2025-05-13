@@ -87,6 +87,4 @@ public class OrderMapper {
 //        summary.setStatus(OrderSummaryDTO.OrderStatus.CHO_XAC_NHAN);
         return summary;
     }
-
-
 }

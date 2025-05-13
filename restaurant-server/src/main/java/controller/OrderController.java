@@ -9,6 +9,7 @@ import service.OrderService;
 import socketserver.ClientHandler;
 
 import java.util.List;
+import java.util.Map;
 
 public class OrderController {
 
@@ -67,4 +68,27 @@ public class OrderController {
             ));
         }
     }
+    public void updateOrderStatus(JsonRequest request, ClientHandler client) {
+        try {
+            Map<String, Object> data = (Map<String, Object>) request.getData();
+            int orderId = (int) data.get("orderId");
+            String statusStr = (String) data.get("status");
+
+            OrderSummaryDTO.OrderStatus newStatus = OrderSummaryDTO.OrderStatus.valueOf(statusStr);
+            boolean success = orderService.updateOrderStatus(orderId, newStatus);
+
+            if (success) {
+                client.sendResponse(new JsonResponse("UPDATE_ORDER_STATUS_SUCCESS", null));
+                System.out.println("✅ Đã cập nhật trạng thái đơn hàng " + orderId + " thành " + newStatus);
+            } else {
+                client.sendResponse(new JsonResponse("UPDATE_ORDER_STATUS_FAIL", "❌ Không tìm thấy đơn hàng."));
+            }
+        } catch (IllegalArgumentException e) {
+            client.sendResponse(new JsonResponse("UPDATE_ORDER_STATUS_FAIL", "❌ Trạng thái không hợp lệ."));
+        } catch (Exception e) {
+            e.printStackTrace();
+            client.sendResponse(new JsonResponse("UPDATE_ORDER_STATUS_FAIL", "❌ Lỗi server: " + e.getMessage()));
+        }
+    }
+
 }
