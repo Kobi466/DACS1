@@ -1,28 +1,55 @@
 package controller;
 
+import dto.OrderDTO;
 import dto.OrderSummaryDTO;
 import service.OrderService;
 import view.OrderPanel;
 
+import javax.swing.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class OrderController {
-    private final OrderService orderService;
-    private static OrderPanel orderPanel = null;
+    private final OrderPanel view;
+    private final OrderService service;
+    private List<OrderSummaryDTO> orderList = new ArrayList<>();
 
-    public OrderController(OrderPanel panel) {
-        this.orderPanel = panel;
-        this.orderService = new OrderService();
+    public OrderController(OrderPanel view) {
+        this.view = view;
+        this.service = new OrderService();
     }
 
     public void loadOrders() {
-        orderService.fetchOrders(
-                this::onOrdersLoaded,
-                orderPanel::showError
+        service.fetchOrders(
+                orders -> {
+                    this.orderList = orders;
+                    SwingUtilities.invokeLater(() -> view.updateOrderTable(orders));
+                },
+                view::showError
         );
     }
 
-    private void onOrdersLoaded(List<OrderSummaryDTO> orders) {
-        orderPanel.updateOrderTable(orders);
+    public void reloadOrders() {
+        loadOrders(); // cùng gọi loadOrders
+    }
+
+    public void loadOrderDetail(int orderId) {
+        service.fetchOrderDetail(
+                orderId,
+                order -> SwingUtilities.invokeLater(() -> view.updateOrderDetail(order)),
+                view::showError
+        );
+    }
+
+    public void addOrder(OrderSummaryDTO newOrder) {
+        this.orderList.add(newOrder);
+    }
+
+    public List<OrderSummaryDTO> getOrders() {
+        return orderList;
+    }
+
+    public void setOrders(List<OrderSummaryDTO> orders) {
+        this.orderList = orders;
     }
 }

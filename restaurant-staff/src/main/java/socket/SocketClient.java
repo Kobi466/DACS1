@@ -73,6 +73,7 @@ public class SocketClient {
         }
     }
 
+
     // Lắng nghe phản hồi từ server trong một luồng riêng
     // Ở listenToServer, đừng tạo thread mới nếu bạn đã có sẵn executor
     public static void listenToServer(String host, int port, ResponseHandler handler) {

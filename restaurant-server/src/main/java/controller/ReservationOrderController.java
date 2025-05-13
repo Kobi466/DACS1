@@ -1,5 +1,6 @@
 package controller;
 
+import dto.OrderDTO;
 import dto.OrderSummaryDTO;
 import dto.ReservationOrderDTO;
 import mapper.OrderMapper;
@@ -25,7 +26,9 @@ public class ReservationOrderController {
 
             // ✅ Gửi broadcast đơn hàng mới đến các staff
             // Chuyển đổi dto sang OrderSummaryDTO
-            OrderSummaryDTO summary = OrderMapper.fromReservationOrder(dto,LoginController.customerDTO);
+            OrderDTO orderDTO = new OrderDTO();
+            orderDTO.setOrderId(OrderController.orderId);
+            OrderSummaryDTO summary = OrderMapper.fromReservationOrder(dto,LoginController.customerDTO, orderDTO);
             // ✅ Gửi NEW_ORDER_CREATED tới toàn bộ staff
             for (Map.Entry<String, ClientHandler> entry : clientMap.entrySet()) {
                 String username = entry.getKey();

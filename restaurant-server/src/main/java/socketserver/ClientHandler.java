@@ -94,6 +94,9 @@ public class ClientHandler implements Runnable {
                         case "GET_ORDER_ITEMS" -> {
                             System.out.println("🔍 Xử lý lệnh GET_ORDER_ITEMS");
                             orderController.getOrderItemsByOrderId(request, this);
+                        } case "NEW_ORDER-CREATED" -> {
+                            System.out.println("🔍 Xử lý lệnh NEW_ORDER_CREATED");
+                            orderController.getAllOrderSummaries(request, this);
                         }
 
 
@@ -149,5 +152,8 @@ public class ClientHandler implements Runnable {
     public void setUsername(String username) {
         this.username = username;
         clientMap.put(username, this);
+    }
+    public String getUsername() {
+        return username;
     }
 }

@@ -66,14 +66,25 @@ public class OrderMapper {
                 .mapToDouble(item -> item.getPrice().doubleValue() * item.getQuantity())
                 .sum();
     }
-    public static OrderSummaryDTO fromReservationOrder(ReservationOrderDTO dto, CustomerDTO customer) {
+    public static OrderSummaryDTO fromReservationOrder(ReservationOrderDTO dto, CustomerDTO customer, OrderDTO order) {
         OrderSummaryDTO summary = new OrderSummaryDTO();
-        summary.setOrderId(dto.getId());
+        summary.setOrderId(order.getOrderId());
         summary.setOrderDate(LocalDateTime.of(LocalDate.now(), dto.getBookingTime()));
         summary.setStatus(OrderSummaryDTO.OrderStatus.CHO_XAC_NHAN);
         summary.setCustomerName(customer.getUserName()); // hoặc getUsername() nếu có
         summary.setCustomerPhone(customer.getSdt());
 
+        return summary;
+    }
+    public static OrderSummaryDTO fromOrderDTO(OrderDTO dto) {
+        OrderSummaryDTO summary = new OrderSummaryDTO();
+        summary.setOrderId(dto.getOrderId());
+        summary.setCustomerName(dto.getCustomerName());
+        summary.setCustomerPhone(dto.getCustomerPhone());
+        summary.setOrderDate(dto.getOrderDate());
+        summary.setTotalPrice(dto.getTotalPrice());
+        // Giả định status mặc định là CHO_XAC_NHAN khi mới tạo
+//        summary.setStatus(OrderSummaryDTO.OrderStatus.CHO_XAC_NHAN);
         return summary;
     }
 

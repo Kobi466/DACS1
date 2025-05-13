@@ -13,11 +13,13 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService = new OrderService();
+    public static int orderId;
 
     // 1. Lấy danh sách đơn hàng (tóm tắt)
     public void getAllOrderSummaries(JsonRequest request, ClientHandler client) {
         try {
             List<OrderSummaryDTO> summaries = orderService.getAllOrderSummaries();
+            System.out.println("[DEBUG] Số lượng item tìm thấy: " + summaries.size());
 
             JsonResponse response = new JsonResponse(
                     CommandType.GET_ORDERS_SUCCESS.name(),
@@ -37,7 +39,8 @@ public class OrderController {
     // 2. Lấy chi tiết đơn hàng theo orderId
     public void getOrderItemsByOrderId(JsonRequest request, ClientHandler client) {
         try {
-            int orderId = (int) request.getData(); // giả định client gửi Integer
+            orderId = (int) request.getData(); // giả định client gửi Integer
+            System.out.println("[DEBUG] Đang xử lý GET_ORDER_ITEMS cho orderId = " + orderId);
 
             OrderDTO orderDetail = orderService.getOrderDetail(orderId);
 
