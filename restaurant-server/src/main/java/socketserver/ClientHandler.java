@@ -1,9 +1,6 @@
 package socketserver;
 
-import controller.LoginController;
-import controller.MessageController;
-import controller.OrderController;
-import controller.ReservationOrderController;
+import controller.*;
 import dto.MessageDTO;
 import network.JsonRequest;
 import network.JsonResponse;
@@ -23,6 +20,7 @@ public class ClientHandler implements Runnable {
     private final OrderController orderController = new OrderController();
     private final ReservationOrderController reservationOrderController = new ReservationOrderController();
     private String username;
+    private final TableStatusController tableStatusController = new TableStatusController();
 
     public ClientHandler(Socket socket) throws IOException {
         this.socket = socket;
@@ -32,6 +30,7 @@ public class ClientHandler implements Runnable {
         this.oos.flush(); // Gửi header ngay trước khi sử dụng
         this.ois = new ObjectInputStream(socket.getInputStream());
     }
+
     private void handleStaffJoin(JsonRequest request) {
         String staffUsername = (String) request.getData();
 
@@ -40,14 +39,6 @@ public class ClientHandler implements Runnable {
         setUsername(staffUsername); // set username và put vào map
 
         sendResponse(new JsonResponse("STAFF_JOINED", "Đã tham gia thành công"));
-    }
-
-    public static void broadcastToAllStaff(JsonResponse response) {
-        for (ClientHandler handler : clientMap.values()) {
-            if (handler.username != null && handler.username.startsWith("staff")) {
-                handler.sendResponse(response);
-            }
-        }
     }
 
     public synchronized void sendResponse(JsonResponse response) {
@@ -94,13 +85,22 @@ public class ClientHandler implements Runnable {
                         case "GET_ORDER_ITEMS" -> {
                             System.out.println("🔍 Xử lý lệnh GET_ORDER_ITEMS");
                             orderController.getOrderItemsByOrderId(request, this);
-                        } case "NEW_ORDER-CREATED" -> {
+                        }
+                        case "NEW_ORDER-CREATED" -> {
                             System.out.println("🔍 Xử lý lệnh NEW_ORDER_CREATED");
                             orderController.getAllOrderSummaries(request, this);
-                        }case "UPDATE_ORDER_STATUS" -> {
+                        }
+                        case "UPDATE_ORDER_STATUS" -> {
                             System.out.println("✏️ Xử lý lệnh UPDATE_ORDER_STATUS");
                             orderController.updateOrderStatus(request, this);
                         }
+                        case "GET_ALL_TABLE_STATUS" -> tableStatusController.handleGetAllTableStatus(request, this);
+                        case "UPDATE_TABLE_STATUS" -> tableStatusController.handleUpdateTableStatus(request, this);
+                        case "UPDATE_RESERVATION_STATUS" ->
+                                tableStatusController.handleUpdateReservationStatus(request, this);
+                        case "UPDATE_ORDER_STATUS_FROM_TABLE" ->
+                                tableStatusController.handleUpdateOrderStatus(request, this);
+
                         default -> System.err.println("⚠️ Lệnh không hợp lệ: " + request.getCommand());
                     }
                 } else {
@@ -114,8 +114,9 @@ public class ClientHandler implements Runnable {
             closeConnection();
         }
     }
+
     public static ClientHandler getClientByUsername(String username) {
-        // Lấy clientHandler từ `clientMap` theo username
+        // Lấy clientHandler từ clientMap theo username
         ClientHandler handler = clientMap.get(username);
         if (handler != null && handler.socket != null && !handler.socket.isClosed()) {
             return handler; // User đang online
@@ -128,12 +129,19 @@ public class ClientHandler implements Runnable {
             if (ois != null) ois.close();
             if (oos != null) oos.close();
             if (socket != null) socket.close();
+            if (username != null) {
+                clientMap.remove(username);
+                System.out.println("🗑️ Xóa client " + username + " khỏi clientMap");
+            }
+
             System.out.println("🔌 Kết nối với client đã được đóng.");
         } catch (IOException e) {
             System.err.println("❌ Lỗi khi đóng kết nối với client: " + e.getMessage());
             e.printStackTrace();
         }
-    }public void broadcastMessage(MessageDTO message) {
+    }
+
+    public void broadcastMessage(MessageDTO message) {
         try {
             ClientHandler receiverHandler = ClientHandler.getClientByUsername(message.getReceiver());
 
@@ -154,6 +162,7 @@ public class ClientHandler implements Runnable {
         this.username = username;
         clientMap.put(username, this);
     }
+
     public String getUsername() {
         return username;
     }
