@@ -10,18 +10,18 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class TableController {
-
+    private static TablePanel view;
     private static TableService tableService;
-    private static final TablePanel view = new TablePanel();
 
-    public TableController(TableService tableService) {
-        TableController.tableService = tableService;
+    public TableController(TableService tableService, TablePanel view) {
+        this.tableService = tableService;
+        this.view = view;
     }
 
     public void fetchAllTableStatuses(Consumer<List<TableStatusDTO>> callback) {
-        this.tableService.listeners.add(callback);
+        tableService.listeners.add(callback);
         JsonRequest request = new JsonRequest("GET_ALL_TABLE_STATUS", null);
-        SocketClient.sendRequest(request, "localhost", 8080);
+        SocketClient.sendRequest(request, tableService.host, tableService.port);
     }
 
     public static void reloadTableStatus() {

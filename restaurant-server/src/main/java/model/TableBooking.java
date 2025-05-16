@@ -28,7 +28,7 @@ public class TableBooking {
     }
 
     public enum StatusTable {
-        TRONG, DA_DAT;
+        TRONG, DA_DAT, DANG_SU_DUNG, CHO_XAC_NHAN;
     }
 
     public TableBooking() {}

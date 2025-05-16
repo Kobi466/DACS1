@@ -18,10 +18,14 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 public class TableService {
+    public  String host;
+    public  int port;
 
     public List<Consumer<List<TableStatusDTO>>> listeners = new ArrayList<>();
 
     public TableService(String host, int port) {
+        this.host = host;
+        this.port = port;
         SocketClient.connect(host, port);
         registerResponseHandlers();
     }
@@ -29,16 +33,16 @@ public class TableService {
     public void fetchAllTableStatuses(Consumer<List<TableStatusDTO>> callback) {
         listeners.add(callback);
         JsonRequest request = new JsonRequest("GET_ALL_TABLE_STATUS", null);
-        SocketClient.sendRequest(request, "localhost", 8080);
+        SocketClient.sendRequest(request, host, port);
     }
 
     public void updateTableStatus(int tableId, TableStatusDTO.StatusTable newStatus) {
         Map<String, Object> data = new HashMap<>();
         data.put("tableId", tableId);
-        data.put("status", newStatus.name());
-
+        data.put("newStatus", newStatus.name());
+        System.out.println("🔥 Sending UPDATE_TABLE_STATUS with data = " + data);
         JsonRequest request = new JsonRequest("UPDATE_TABLE_STATUS", data);
-        SocketClient.sendRequest(request, "localhost", 8080);
+        SocketClient.sendRequest(request, host, port);
     }
 
     private void registerResponseHandlers() {
@@ -57,16 +61,34 @@ public class TableService {
                         }
                         listeners.clear();
                     }
+                    case "NEW_ORDER_CREATED" -> TableController.reloadTableStatus();
+                    case "UPDATE_ORDER_STATUS_SUCCESS" -> {
+                        // Server đã cập nhật, client có thể reload lại nếu muốn
+                        TableController.reloadTableStatus();
+                    }
+                    case "UPDATE_TABLE_STATUS" -> {
+                        TableController.reloadTableStatus(); // xử lý khi server chủ động thông báo
+                    }
+                    case "UPDATE_TABLE_STATUS_FAIL" -> {
+                        JOptionPane.showMessageDialog(null,
+                                "Cập nhật trạng thái bàn thất bại!",
+                                "Lỗi",
+                                JOptionPane.ERROR_MESSAGE);
+                    }
 
-                    case "TABLE_STATUS_UPDATED" -> {
+                    case "UPDATE_TABLE_STATUS_SUCCESS" -> {
+                        // Server đã cập nhật, client có thể reload lại nếu muốn
                         TableController.reloadTableStatus();
                     }
 
-                    default -> {}
+                    default -> {
+                        System.out.println("⚠️ Không hiểu response: " + status);
+                    }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
         });
     }
+
 }

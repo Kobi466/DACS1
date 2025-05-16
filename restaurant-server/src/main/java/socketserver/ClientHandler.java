@@ -2,6 +2,7 @@ package socketserver;
 
 import controller.*;
 import dto.MessageDTO;
+import network.CommandType;
 import network.JsonRequest;
 import network.JsonResponse;
 
@@ -64,43 +65,33 @@ public class ClientHandler implements Runnable {
                 if (obj instanceof JsonRequest request) {
                     System.out.println("📩 Nhận yêu cầu từ client: " + request.getCommand());
 
-                    switch (request.getCommand()) {
-                        case "LOGIN" -> loginController.handleLoginRequest(request, this);
-                        case "SEND_MESSAGE" -> messageController.handleSendMessage(request, this);
-                        case "GET_CHAT_HISTORY" -> messageController.handleGetChatHistory(request, this);
-                        case "GET_CUSTOMER_LIST" -> {
-                            System.out.println("🔍 Xử lý lệnh GET_CUSTOMER_LIST");
-                            messageController.handleGetCustomerList(request, this);
+                    switch (CommandType.valueOf(request.getCommand())) {
+                        case LOGIN -> loginController.handleLoginRequest(request, this);
+                        case SEND_MESSAGE -> messageController.handleSendMessage(request, this);
+                        case GET_CHAT_HISTORY -> messageController.handleGetChatHistory(request, this);
+                        case GET_CUSTOMER_LIST -> messageController.handleGetCustomerList(request, this);
+                        case GET_CUSTOMER_LIST_WITH_MESSAGES -> messageController.handleGetCustomerListWithMessages(request, this);
+                        case STAFF_JOINED -> this.handleStaffJoin(request);
+                        case RESERVE_AND_ORDER -> {
+                            reservationOrderController.handleReserveAndOrder(request, this);
+                            tableStatusController.handleGetAllTableStatus(request, this);
                         }
-                        case "GET_CUSTOMER_LIST_WITH_MESSAGES" -> {
-                            System.out.println("🔍 Xử lý lệnh GET_CUSTOMER_LIST_WITH_MESSAGES");
-                            messageController.handleGetCustomerListWithMessages(request, this);
-                        }
-                        case "STAFF_JOINED" -> this.handleStaffJoin(request);
-                        case "RESERVE_AND_ORDER" -> reservationOrderController.handleReserveAndOrder(request, this);
-                        case "GET_ORDERS" -> {
-                            System.out.println("🔍 Xử lý lệnh GET_ORDERS");
+                        case GET_ORDERS -> orderController.getAllOrderSummaries(request, this);
+                        case GET_ORDER_ITEMS -> orderController.getOrderItemsByOrderId(request, this);
+                        case NEW_ORDER_CREATED -> {
                             orderController.getAllOrderSummaries(request, this);
+                            tableStatusController.handleGetAllTableStatus(request, this);
                         }
-                        case "GET_ORDER_ITEMS" -> {
-                            System.out.println("🔍 Xử lý lệnh GET_ORDER_ITEMS");
-                            orderController.getOrderItemsByOrderId(request, this);
-                        }
-                        case "NEW_ORDER-CREATED" -> {
-                            System.out.println("🔍 Xử lý lệnh NEW_ORDER_CREATED");
-                            orderController.getAllOrderSummaries(request, this);
-                        }
-                        case "UPDATE_ORDER_STATUS" -> {
-                            System.out.println("✏️ Xử lý lệnh UPDATE_ORDER_STATUS");
+                        case UPDATE_ORDER_STATUS -> {
                             orderController.updateOrderStatus(request, this);
+                            orderController.getAllOrderSummaries(request, this);
+                            tableStatusController.handleGetAllTableStatus(request, this);
                         }
-                        case "GET_ALL_TABLE_STATUS" -> tableStatusController.handleGetAllTableStatus(request, this);
-                        case "UPDATE_TABLE_STATUS" -> tableStatusController.handleUpdateTableStatus(request, this);
-                        case "UPDATE_RESERVATION_STATUS" ->
-                                tableStatusController.handleUpdateReservationStatus(request, this);
-                        case "UPDATE_ORDER_STATUS_FROM_TABLE" ->
-                                tableStatusController.handleUpdateOrderStatus(request, this);
-
+                        case GET_ALL_TABLE_STATUS -> tableStatusController.handleGetAllTableStatus(request, this);
+                        case UPDATE_TABLE_STATUS -> {
+                            tableStatusController.handleUpdateTableStatus(request, this);
+                            tableStatusController.handleGetAllTableStatus(request, this);
+                        }
                         default -> System.err.println("⚠️ Lệnh không hợp lệ: " + request.getCommand());
                     }
                 } else {
@@ -108,8 +99,7 @@ public class ClientHandler implements Runnable {
                 }
             }
         } catch (ClassNotFoundException | IOException e) {
-            System.err.println("❌ Lỗi trong khi xử lý client: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("❌ Lỗi trong khi xử lý client: " + e.getMessage() + "Clien offline");
         } finally {
             closeConnection();
         }

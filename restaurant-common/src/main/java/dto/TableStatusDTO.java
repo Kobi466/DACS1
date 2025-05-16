@@ -29,7 +29,7 @@ public class TableStatusDTO implements java.io.Serializable{
 
     private StatusTable status;// TRONG, DA_DAT, etc. (hiển thị màu)
     public enum StatusTable {
-        TRONG, DA_DAT, CHO_XAC_NHAN
+        TRONG, DA_DAT, DANG_SU_DUNG, CHO_XAC_NHAN
     }
     public enum ReservationStatus {
         CHO_XAC_NHAN, DA_XAC_NHAN, HUY
@@ -52,6 +52,37 @@ public class TableStatusDTO implements java.io.Serializable{
 
     public TableStatusDTO() {
     }
+    public void resolveStatus() {
+        // Nếu không có đặt bàn và đơn hàng -> bàn trống
+        if (reservationStatus == null && orderStatus == null) {
+            this.status = StatusTable.TRONG;
+            return;
+        }
+
+        // Nếu có đặt bàn chờ xác nhận
+        if (reservationStatus == ReservationStatus.CHO_XAC_NHAN) {
+            this.status = StatusTable.CHO_XAC_NHAN;
+            return;
+        }
+
+        // Nếu đã xác nhận đặt bàn, kiểm tra order
+        if (reservationStatus == ReservationStatus.DA_XAC_NHAN) {
+            if (orderStatus == null || orderStatus == OrderSummaryDTO.OrderStatus.CHO_XAC_NHAN ||
+                    orderStatus == OrderSummaryDTO.OrderStatus.DANG_CHE_BIEN) {
+                this.status = StatusTable.DA_DAT;
+            } else {
+                this.status = StatusTable.TRONG; // Đơn đã hoàn thành hoặc hủy
+            }
+            return;
+        }
+
+        // Trường hợp đặt bàn bị hủy
+        if (reservationStatus == ReservationStatus.HUY || OrderSummaryDTO.OrderStatus.HOAN_THANH == orderStatus) {
+            this.status = StatusTable.TRONG;
+            return;
+        }
+    }
+
 
     public int getTableId() {
         return tableId;

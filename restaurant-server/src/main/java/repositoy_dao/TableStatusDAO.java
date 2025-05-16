@@ -1,6 +1,7 @@
 package repositoy_dao;
 
 import dto.TableStatusDTO;
+import jdk.jfr.consumer.RecordedEvent;
 import mapper.TableStatusMapper;
 import model.Order;
 import model.Reservation;
@@ -54,7 +55,6 @@ public class TableStatusDAO {
      */
     public boolean updateTableStatus(int tableId, TableBooking.StatusTable newStatus) {
         Transaction tx = null;
-
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             tx = session.beginTransaction();
 
@@ -62,7 +62,18 @@ public class TableStatusDAO {
             if (table != null) {
                 table.setStatus(newStatus);
                 session.update(table);
-                tx.commit();
+
+                // ✅ Đưa xử lý reservation vào đây
+                if (newStatus == TableBooking.StatusTable.DA_DAT || newStatus == TableBooking.StatusTable.DANG_SU_DUNG) {
+                    Reservation reservation = ReservationDAO.getInstance().findReservationByIdTable(tableId);
+                    System.out.println("reservation: " + reservation);
+                    if (reservation != null) {
+                        reservation.setStatus(Reservation.ReservationStatus.DA_XAC_NHAN);
+                        ReservationDAO.getInstance().update(reservation);
+                    }
+                }
+
+                tx.commit(); // commit sau khi xử lý cả table lẫn reservation
                 return true;
             }
 
@@ -73,6 +84,7 @@ public class TableStatusDAO {
 
         return false;
     }
+
 
     /**
      * Cập nhật trạng thái của một đặt chỗ.

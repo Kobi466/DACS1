@@ -62,7 +62,9 @@ public class TableStatusController {
     ) {
         try {
             Map<String, Object> data = (Map<String, Object>) request.getData();
-            int id = ((Double) data.get(idKey)).intValue();
+
+            Number idRaw = (Number) data.get(idKey);         // ✅ FIXED
+            int id = idRaw.intValue();                       // ✅ Không còn ép Double
             String statusStr = (String) data.get(statusKey);
 
             T status = Enum.valueOf(statusEnum, statusStr);
@@ -70,9 +72,11 @@ public class TableStatusController {
 
             handler.sendResponse(new JsonResponse(actionPrefix + "_SUCCESS", result));
         } catch (Exception e) {
+            e.printStackTrace(); // Debug chi tiết hơn
             handler.sendResponse(new JsonResponse(actionPrefix + "_FAIL", e.getMessage()));
         }
     }
+
 
     @FunctionalInterface
     private interface StatusUpdater {

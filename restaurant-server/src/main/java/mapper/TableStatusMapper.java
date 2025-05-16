@@ -11,6 +11,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
+import static dto.TableStatusDTO.ReservationStatus.*;
+
 public class TableStatusMapper {
 
     public static TableStatusDTO toDTO(TableBooking table, List<Reservation> reservations, List<Order> orders) {
@@ -75,4 +77,14 @@ public class TableStatusMapper {
         sb.append("Số đơn đang hoạt động: ").append(dto.getActiveOrderCount());
         return sb.toString();
     }
+    // Trong TableStatusDTO.ReservationStatus
+    public static ReservationStatus fromModelEnum(model.Reservation.ReservationStatus status) {
+        switch (status) {
+            case CHO_XAC_NHAN: return CHO_XAC_NHAN;
+            case DA_XAC_NHAN: return DA_XAC_NHAN;
+            case HUY: return HUY;
+            default: throw new IllegalArgumentException("Unknown enum: " + status);
+        }
+    }
+
 }

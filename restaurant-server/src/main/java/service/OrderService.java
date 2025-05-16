@@ -1,14 +1,17 @@
 package service;
 
 
-
 import dto.OrderDTO;
 import dto.OrderItemDTO;
 import dto.OrderSummaryDTO;
 import model.Order;
 import model.OrderItem;
+import model.Reservation;
+import model.TableBooking;
 import repositoy_dao.OrderDAO;
 import repositoy_dao.OrderItemDAO;
+import repositoy_dao.ReservationDAO;
+import repositoy_dao.TableBookingDAO;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -81,58 +84,114 @@ public class OrderService {
     }
 
 
-
-
     // 3. Cập nhật trạng thái đơn hàng
     public void updateOrderStatus(int orderId, Order.OrderStatus status) {
         orderDAO.updateStatus(orderId, status);
     }
 
-    public boolean updateOrderStatus(int orderId, OrderSummaryDTO.OrderStatus status) {
+    public boolean updateOrderStatus(int orderId, OrderSummaryDTO.OrderStatus statusDTO) {
         Order order = orderDAO.selecById(orderId);
         if (order == null) {
-            System.out.println("[ERROR] Không tìm thấy đơn hàng ID: " + orderId);
+            System.err.println("[ERROR] Không tìm thấy đơn hàng với ID: " + orderId);
             return false;
         }
 
         Order.OrderStatus current = order.getStatus();
-        Order.OrderStatus next = Order.OrderStatus.valueOf(status.name());
+        Order.OrderStatus next = Order.OrderStatus.valueOf(statusDTO.name());
 
         if (!isValidTransition(current, next)) {
-            System.out.printf("[WARN] Chuyển trạng thái không hợp lệ: %s ➜ %s\n", current, next);
+            System.out.printf("[WARN] Không thể chuyển trạng thái từ %s ➜ %s (ID: %d)%n", current, next, orderId);
             return false;
         }
 
         order.setStatus(next);
         orderDAO.update(order);
 
-        // 👉 Xử lý theo trạng thái mới
+        System.out.printf("[INFO] Đơn hàng #%d chuyển trạng thái: %s ➜ %s%n", orderId, current, next);
+
+        // 👉 Hành động theo từng trạng thái
         switch (next) {
             case DA_XAC_NHAN:
-                // Gửi tin nhắn xác nhận tới khách hàng
-                System.out.println("[INFO] Đã xác nhận đơn hàng ➜ gửi thông báo cho khách");
-                // TODO: ChatService.sendMessageToCustomer(order.getCustomer(), "Đơn hàng của bạn đã được xác nhận!");
+                System.out.println("[ACTION] Xác nhận đơn hàng – gửi thông báo tới khách hàng.");
+                // TODO: ChatService.sendMessageToCustomer(order.getCustomer(), "Đơn hàng của bạn đã được xác nhận.");
+                TableBooking table = OrderDAO.getInstance().findTableByOrderId(orderId);
+                if (table != null) {
+                    table.setStatus(TableBooking.StatusTable.DA_DAT);
+                    TableBookingDAO.getInstance().update(table);
+                    Reservation re = ReservationDAO.getInstance().findReservationByIdTable(table.getId());
+                    if (re != null) {
+                        re.setStatus(Reservation.ReservationStatus.DA_XAC_NHAN);
+                        ReservationDAO.getInstance().update(re);
+                    }
+                }
+                break;
+
+            case DANG_CHE_BIEN:
+                System.out.println("[ACTION] Bắt đầu chế biến đơn hàng.");
+                TableBooking table1 = OrderDAO.getInstance().findTableByOrderId(orderId);
+                if (table1 != null) {
+                    table1.setStatus(TableBooking.StatusTable.DANG_SU_DUNG);
+                    TableBookingDAO.getInstance().update(table1);
+                }
                 break;
 
             case HOAN_THANH:
-                // Xuất hóa đơn PDF
-                System.out.println("[INFO] Đơn hàng hoàn thành ➜ xuất hóa đơn PDF");
+                System.out.println("[ACTION] Đơn hàng hoàn thành – xuất hóa đơn PDF.");
                 // TODO: InvoiceService.generatePDF(order);
+                TableBooking table2 = OrderDAO.getInstance().findTableByOrderId(orderId);
+                if (table2 != null) {
+                    table2.setStatus(TableBooking.StatusTable.TRONG);
+                    TableBookingDAO.getInstance().update(table2);
+                    Reservation re1 = ReservationDAO.getInstance().findReservationByIdTable2(table2.getId());
+                    if (re1 != null) {
+                        ReservationDAO.getInstance().delete(re1);
+                    }
+                }
+                break;
+
+            case DA_HUY:
+                System.out.println("[ACTION] Đơn hàng bị hủy – gửi thông báo tới khách hàng.");
+                // TODO: ChatService.sendMessageToCustomer(order.getCustomer(), "Đơn hàng của bạn đã bị hủy.");
+                // TODO: Nếu có liên kết với bàn/reservation thì cập nhật trạng thái bàn
+                TableBooking table3 = OrderDAO.getInstance().findTableByOrderId(orderId);
+                if (table3 != null) {
+                    table3.setStatus(TableBooking.StatusTable.TRONG);
+                    TableBookingDAO.getInstance().update(table3);
+                    Reservation re = ReservationDAO.getInstance().findReservationByIdTable(table3.getId());
+                    if (re != null) {
+                        ReservationDAO.getInstance().delete(re);
+                    }
+                }
+                Order order1 = OrderDAO.getInstance().selecById(orderId);
+                if (order1 != null) {
+                    OrderDAO.getInstance().delete(order1);
+                }
                 break;
         }
 
         return true;
     }
+
     private boolean isValidTransition(Order.OrderStatus current, Order.OrderStatus next) {
         switch (current) {
             case CHO_XAC_NHAN:
                 return next == Order.OrderStatus.DA_XAC_NHAN || next == Order.OrderStatus.DA_HUY;
+
             case DA_XAC_NHAN:
                 return next == Order.OrderStatus.DANG_CHE_BIEN || next == Order.OrderStatus.DA_HUY;
+
             case DANG_CHE_BIEN:
-                return next == Order.OrderStatus.HOAN_THANH;
+                return next == Order.OrderStatus.HOAN_THANH || next == Order.OrderStatus.DA_HUY;
+
+            // Các trạng thái kết thúc không được chuyển tiếp
+            case HOAN_THANH:
+            case DA_HUY:
+                return false;
+
             default:
                 return false;
         }
     }
+
+
 }
