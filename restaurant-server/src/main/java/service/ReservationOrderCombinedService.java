@@ -55,7 +55,7 @@ public class ReservationOrderCombinedService {
         }
 
         // 3. Cập nhật trạng thái bàn
-        table.setStatus(TableBooking.StatusTable.CHO_XAC_NHAN);
+        table.setStatus(TableBooking.StatusTable.DA_DAT);
         tableBookingDAO.update(table);
 
         // 4. Lưu reservation
