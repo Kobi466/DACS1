@@ -1,6 +1,7 @@
 package controller;
 
 import dto.CustomerDTO;
+import model.Order;
 import service.ReservationOrderCombinedService;
 import session.ChatHistoryRequest;
 import dto.MessageDTO;
@@ -12,6 +13,7 @@ import util.JacksonUtils;
 import util.ReservationOrderParser;
 
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class MessageController {
@@ -114,7 +116,9 @@ public class MessageController {
             e.printStackTrace();
             senderHandler.sendResponse(new JsonResponse("ERROR", "Failed to get customer list", "server"));
         }
-    }public void handleGetCustomerListWithMessages(JsonRequest request, ClientHandler senderHandler) {
+    }
+
+    public void handleGetCustomerListWithMessages(JsonRequest request, ClientHandler senderHandler) {
         try {
             System.out.println("🟢 Debug: Xử lý yêu cầu danh sách khách hàng kèm tin nhắn.");
 
@@ -137,6 +141,33 @@ public class MessageController {
         } catch (Exception e) {
             e.printStackTrace();
             senderHandler.sendResponse(new JsonResponse("ERROR", "Failed to get customer list with messages", "server"));
+        }
+    }
+
+    public static void notifyCustomer(Order order, String message) {
+        String customerUsername = order.getCustomer().getUserName();
+        String staffUsername = "staff"; // hoặc định danh nhân viên thực tế nếu có
+
+
+        MessageDTO messageDTO = new MessageDTO(
+                staffUsername,                  // sender
+                customerUsername,               // receiver
+                message,                 // content
+                LocalDateTime.now(),            // thời gian gửi
+                order.getCustomer().getCustomer_Id()     // customerId
+        );
+
+        // Lưu DB nếu muốn
+        MessageService messageService = new MessageService();
+        messageService.saveMessage(messageDTO);
+
+        // Gửi socket đến client
+        ClientHandler customerHandler = ClientHandler.getClientByUsername(customerUsername);
+        if (customerHandler != null) {
+            customerHandler.broadcastMessage(messageDTO);
+            System.out.println("📢 Đã gửi thông báo tới khách: " + customerUsername);
+        } else {
+            System.err.println("❌ Không tìm thấy handler cho khách: " + customerUsername);
         }
     }
 }

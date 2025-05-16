@@ -1,6 +1,7 @@
 package service;
 
 
+import controller.MessageController;
 import dto.OrderDTO;
 import dto.OrderItemDTO;
 import dto.OrderSummaryDTO;
@@ -113,7 +114,8 @@ public class OrderService {
         switch (next) {
             case DA_XAC_NHAN:
                 System.out.println("[ACTION] Xác nhận đơn hàng – gửi thông báo tới khách hàng.");
-                // TODO: ChatService.sendMessageToCustomer(order.getCustomer(), "Đơn hàng của bạn đã được xác nhận.");
+                MessageController.notifyCustomer(order, "Đơn hàng của bạn đã được xác nhận.");
+
                 TableBooking table = OrderDAO.getInstance().findTableByOrderId(orderId);
                 if (table != null) {
                     table.setStatus(TableBooking.StatusTable.DA_DAT);
@@ -128,6 +130,8 @@ public class OrderService {
 
             case DANG_CHE_BIEN:
                 System.out.println("[ACTION] Bắt đầu chế biến đơn hàng.");
+                MessageController.notifyCustomer(order, "Đơn hàng của bạn đã đang nhà bếp chế biến.");
+
                 TableBooking table1 = OrderDAO.getInstance().findTableByOrderId(orderId);
                 if (table1 != null) {
                     table1.setStatus(TableBooking.StatusTable.DANG_SU_DUNG);
@@ -137,6 +141,8 @@ public class OrderService {
 
             case HOAN_THANH:
                 System.out.println("[ACTION] Đơn hàng hoàn thành – xuất hóa đơn PDF.");
+                MessageController.notifyCustomer(order, "Đơn hàng của bạn đã hoàn thành. Xin mời bạn thanh toán đơn hàng");
+
                 // TODO: InvoiceService.generatePDF(order);
                 TableBooking table2 = OrderDAO.getInstance().findTableByOrderId(orderId);
                 if (table2 != null) {
@@ -151,8 +157,7 @@ public class OrderService {
 
             case DA_HUY:
                 System.out.println("[ACTION] Đơn hàng bị hủy – gửi thông báo tới khách hàng.");
-                // TODO: ChatService.sendMessageToCustomer(order.getCustomer(), "Đơn hàng của bạn đã bị hủy.");
-                // TODO: Nếu có liên kết với bàn/reservation thì cập nhật trạng thái bàn
+                MessageController.notifyCustomer(order, String.valueOf(next));
                 TableBooking table3 = OrderDAO.getInstance().findTableByOrderId(orderId);
                 if (table3 != null) {
                     table3.setStatus(TableBooking.StatusTable.TRONG);
@@ -168,7 +173,6 @@ public class OrderService {
                 }
                 break;
         }
-
         return true;
     }
 

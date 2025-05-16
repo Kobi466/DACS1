@@ -1,5 +1,6 @@
 package service;
 
+import controller.MessageController;
 import dto.OrderDTO;
 import dto.OrderItemDTO;
 import dto.ReservationOrderDTO;
@@ -68,6 +69,7 @@ public class ReservationOrderCombinedService {
         order.setTable(table);
         order.setOrderDate(LocalDateTime.now());
         order.setStatus(Order.OrderStatus.CHO_XAC_NHAN);
+        MessageController.notifyCustomer(order, "Cảm ơn bạn đã đặt bàn tại nhà hàng của chúng tôi! Vui lòng chờ nhà hàng tôi xác nhận đơn hàng hihi");
 
         // 6. Tạo danh sách OrderItem
         List<OrderItem> items = dto.getItems().stream()
