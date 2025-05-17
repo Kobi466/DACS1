@@ -20,10 +20,6 @@ public class Customer{
     private List<Order> orders;
     @OneToMany(mappedBy = "customer")
     private List<Reservation> reservations;
-    @OneToMany(mappedBy = "customer")
-    private List<Rating> ratings;
-    @OneToMany(mappedBy = "customer")
-    private List<CustomerVoucher> customerVouchers;
     @OneToMany(mappedBy = "customer", fetch = FetchType.LAZY)
     private List<Message> messages;
 
@@ -75,22 +71,6 @@ public class Customer{
 
     public void setReservations(List<Reservation> reservations) {
         this.reservations = reservations;
-    }
-
-    public List<Rating> getRatings() {
-        return ratings;
-    }
-
-    public void setRatings(List<Rating> ratings) {
-        this.ratings = ratings;
-    }
-
-    public List<CustomerVoucher> getCustomerVouchers() {
-        return customerVouchers;
-    }
-
-    public void setCustomerVouchers(List<CustomerVoucher> customerVouchers) {
-        this.customerVouchers = customerVouchers;
     }
 
     public List<Message> getMessages() {

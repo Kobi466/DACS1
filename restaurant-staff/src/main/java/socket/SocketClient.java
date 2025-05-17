@@ -23,7 +23,7 @@ public class SocketClient {
     // Kết nối đến server
     public static void connect(String host, int port) {
         if (isConnected) {
-            System.err.println("[SocketClient] Đã kết nối trước đó, không cần kết nối lại!");
+            System.err.println("[STAFF] Đã kết nối trước đó, không cần kết nối lại!");
             return;
         }
 
@@ -33,9 +33,9 @@ public class SocketClient {
             oos.flush();
             ois = new ObjectInputStream(socket.getInputStream());
             isConnected = true;
-            System.out.println("[SocketClient] Kết nối thành công đến server tại " + host + ":" + port);
+            System.out.println("[STAFF] Kết nối thành công đến server tại " + host + ":" + port);
         } catch (IOException e) {
-            System.err.println("[SocketClient] Lỗi khi kết nối đến server: " + e.getMessage());
+            System.err.println("[STAFF] Lỗi khi kết nối đến server: " + e.getMessage());
             isConnected = false;
         }
     }
@@ -56,7 +56,7 @@ public class SocketClient {
     public static void sendRequest(JsonRequest request, String host, int port) {
         ensureConnected(host, port);
         if (!isConnected) {
-            System.err.println("[SocketClient] Vẫn không thể gửi request do không có kết nối!");
+            System.err.println("[STAFF] Vẫn không thể gửi request do không có kết nối!");
             return;
         }
 
@@ -64,12 +64,12 @@ public class SocketClient {
             if (oos != null) {
                 oos.writeObject(request);
                 oos.flush();
-                System.out.println("[SocketClient] Đã gửi request: " + request.getCommand());
+                System.out.println("[STAFF] Đã gửi request: " + request.getCommand());
             } else {
-                System.err.println("[SocketClient] ObjectOutputStream chưa được khởi tạo, không thể gửi request!");
+                System.err.println("[STAFF] ObjectOutputStream chưa được khởi tạo, không thể gửi request!");
             }
         } catch (IOException e) {
-            System.err.println("[SocketClient] Lỗi khi gửi request: " + e.getMessage());
+            System.err.println("[STAFF] Lỗi khi gửi request: " + e.getMessage());
         }
     }
 
@@ -79,7 +79,7 @@ public class SocketClient {
     public static void listenToServer(String host, int port, ResponseHandler handler) {
         ensureConnected(host, port);
         if (!isConnected) {
-            System.err.println("[SocketClient] Không thể bắt đầu lắng nghe do chưa kết nối đến server!");
+            System.err.println("[STAFF] Không thể bắt đầu lắng nghe do chưa kết nối đến server!");
             return;
         }
 
@@ -92,7 +92,7 @@ public class SocketClient {
                     }
                 }
             } catch (Exception e) {
-                System.err.println("[SocketClient] Lỗi khi lắng nghe từ server: " + e.getMessage());
+                System.err.println("[STAFF] Lỗi khi lắng nghe từ server: " + e.getMessage());
                 e.printStackTrace();
             }
         });
@@ -106,7 +106,7 @@ public class SocketClient {
                 return (JsonResponse) ois.readObject();
             }
         } catch (IOException | ClassNotFoundException e) {
-            System.err.println("[SocketClient] Lỗi khi nhận dữ liệu từ server: " + e.getMessage());
+            System.err.println("[STAFF] Lỗi khi nhận dữ liệu từ server: " + e.getMessage());
             isConnected = false; // Gợi ý thêm dòng này
         }
         return null;
@@ -120,9 +120,9 @@ public class SocketClient {
             if (oos != null) oos.close();
             if (socket != null) socket.close();
             isConnected = false;
-            System.out.println("[SocketClient] Đã đóng kết nối.");
+            System.out.println("[STAFF] Đã đóng kết nối.");
         } catch (IOException e) {
-            System.err.println("[SocketClient] Lỗi khi đóng kết nối: " + e.getMessage());
+            System.err.println("[STAFF] Lỗi khi đóng kết nối: " + e.getMessage());
         }
     }
 

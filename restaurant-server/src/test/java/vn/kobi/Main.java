@@ -11,11 +11,11 @@ import java.math.BigDecimal;
 
 public class Main {
     public static void main(String[] args) {
-        MenuItem menuItem = new MenuItem();
-        menuItem.setName("Com");
-        menuItem.setPrice(BigDecimal.valueOf(10000));
-        menuItem.setQuantity(5);
-        MenuItemDAO.getInstance().insert(menuItem);
+//        MenuItem menuItem = new MenuItem();
+//        menuItem.setName("Com");
+//        menuItem.setPrice(BigDecimal.valueOf(10000));
+//        menuItem.setQuantity(5);
+//        MenuItemDAO.getInstance().insert(menuItem);
 //        Customer customer = new Customer();
 //        customer.setUserName("kobi");
 //        customer.setSdt("0366500642");

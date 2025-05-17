@@ -15,12 +15,8 @@
         <mapping class="model.Order"/>
         <mapping class="model.MenuItem"/>
         <mapping class="model.OrderItem"/>
-        <mapping class="model.Rating"/>
         <mapping class="model.TableBooking"/>
         <mapping class="model.Reservation"/>
-        <mapping class="model.Voucher"/>
-        <mapping class="model.CustomerVoucher"/>
-        <mapping class="model.KitchenQueue"/>
         <mapping class="model.Message"/>
     </session-factory>
 </hibernate-configuration>

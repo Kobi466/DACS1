@@ -137,7 +137,7 @@ public class ClientHandler implements Runnable {
 
             if (receiverHandler != null) {
                 // Phát tin nhắn cho người nhận đang online
-                JsonResponse response = new JsonResponse("NEW_MESSAGE", message, "server");
+                JsonResponse response = new JsonResponse(CommandType.NEW_MESSAGE.name(), message, "server");
                 receiverHandler.sendResponse(response);
                 System.out.println("📤 Tin nhắn đã được gửi đến receiver: " + message.getReceiver());
             } else {

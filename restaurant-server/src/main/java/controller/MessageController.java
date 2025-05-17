@@ -1,16 +1,19 @@
 package controller;
 
 import dto.CustomerDTO;
+import model.Customer;
 import model.Order;
-import service.ReservationOrderCombinedService;
+import network.CommandType;
+import repositoy_dao.CustomerDAO;
+import service.MenuItemService;
 import session.ChatHistoryRequest;
 import dto.MessageDTO;
 import network.JsonRequest;
 import network.JsonResponse;
 import service.MessageService;
+import session.SessionManager;
 import socketserver.ClientHandler;
 import util.JacksonUtils;
-import util.ReservationOrderParser;
 
 
 import java.time.LocalDateTime;
@@ -22,15 +25,13 @@ public class MessageController {
     public void handleSendMessage(JsonRequest request, ClientHandler senderHandler) {
         try {
             if (request == null || request.getData() == null) {
-                senderHandler.sendResponse(new JsonResponse("ERROR", "Request data is invalid or missing", "server"));
+                senderHandler.sendResponse(new JsonResponse(CommandType.ERROR.name(), "Request data is invalid or missing", "server"));
                 return;
             }
-
             // Chuyển đổi JsonRequest thành MessageDTO
             MessageDTO messageDTO = JacksonUtils.getObjectMapper().convertValue(request.getData(), MessageDTO.class);
-
             if (messageDTO == null) {
-                senderHandler.sendResponse(new JsonResponse("ERROR", "Failed to parse message data", "server"));
+                senderHandler.sendResponse(new JsonResponse(CommandType.ERROR.name(), "Failed to parse message data", "server"));
                 return;
             }
 
@@ -38,23 +39,29 @@ public class MessageController {
             boolean success = messageService.saveMessage(messageDTO);
 
             if (success) {
-                senderHandler.sendResponse(new JsonResponse("MESSAGE_SENT", "Message saved successfully", "server"));
+                if ("Cho tôi xem menu quán".equals(messageDTO.getContent())) {
+                    String notify = "📜 Menu hiện tại của nhà hàng:\n" + String.join("\n", new MenuItemService().showmenu());
+                    notifyMenu(notify);
+                    return;
+                }
+                // Gửi phản hồi cho client
+                senderHandler.sendResponse(new JsonResponse(CommandType.SEND_SUCCESS.name(), "Message saved successfully", "server"));
                 // Phát tin nhắn real-time tới receiver
                 senderHandler.broadcastMessage(messageDTO);
                 System.out.println("📤 Gửi tin nhắn từ " + messageDTO.getSender() + " đến " + messageDTO.getReceiver());
             } else {
-                senderHandler.sendResponse(new JsonResponse("ERROR", "Cannot save message", "server"));
+                senderHandler.sendResponse(new JsonResponse(CommandType.ERROR.name(), "Cannot save message", "server"));
             }
         } catch (Exception e) {
             e.printStackTrace();
-            senderHandler.sendResponse(new JsonResponse("ERROR", "Failed to handle message", "server"));
+            senderHandler.sendResponse(new JsonResponse(CommandType.ERROR.name(), "Failed to handle message", "server"));
         }
     }
 
     public void handleGetChatHistory(JsonRequest request, ClientHandler senderHandler) {
         try {
             if (request == null || request.getData() == null) {
-                senderHandler.sendResponse(new JsonResponse("ERROR", "Request data is invalid or missing", "server"));
+                senderHandler.sendResponse(new JsonResponse(CommandType.ERROR.name(), "Request data is invalid or missing", "server"));
                 return;
             }
 
@@ -62,7 +69,7 @@ public class MessageController {
                     .convertValue(request.getData(), ChatHistoryRequest.class);
 
             if (chatHistoryRequest == null) {
-                senderHandler.sendResponse(new JsonResponse("ERROR", "Invalid request data format", "server"));
+                senderHandler.sendResponse(new JsonResponse(CommandType.ERROR.name(), "Invalid request data format", "server"));
                 return;
             }
 
@@ -77,11 +84,11 @@ public class MessageController {
                 System.out.println("🟢 Debug: Số lượng tin nhắn trong lịch sử: " + chatHistory.size());
             }
 
-            JsonResponse response = new JsonResponse("CHAT_HISTORY", chatHistory, "server");
+            JsonResponse response = new JsonResponse(CommandType.CHAT_HISTORY_SUCCESS.name(), chatHistory, "server");
             senderHandler.sendResponse(response);
         } catch (Exception e) {
             e.printStackTrace();
-            senderHandler.sendResponse(new JsonResponse("ERROR", "Failed to get chat history", "server"));
+            senderHandler.sendResponse(new JsonResponse(CommandType.ERROR.name(), "Failed to get chat history", "server"));
         }
     }
 
@@ -95,7 +102,7 @@ public class MessageController {
             if (customers == null) {
                 // Trường hợp không thể truy vấn danh sách khách hàng
                 System.err.println("❌ Lỗi: Không thể truy xuất danh sách khách hàng có tin nhắn từ cơ sở dữ liệu.");
-                senderHandler.sendResponse(new JsonResponse("ERROR", "Cannot load customer list with messages", "server"));
+                senderHandler.sendResponse(new JsonResponse(CommandType.ERROR.name(), "Cannot load customer list with messages", "server"));
                 return;
             }
 
@@ -103,18 +110,18 @@ public class MessageController {
                 // Trường hợp không có khách hàng nào có tin nhắn
                 System.out.println("⚠️ Không tìm thấy khách hàng nào có tin nhắn.");
                 senderHandler.sendResponse(
-                        new JsonResponse("NO_CUSTOMERS_WITH_MESSAGES", "No customers found with existing messages", "server")
+                        new JsonResponse(CommandType.NO_CUSTOMERS_WITH_MESSAGES.name(), "No customers found with existing messages", "server")
                 );
                 return;
             }
 
             // Thành công: gửi danh sách khách hàng có tin nhắn
             System.out.println("🟢 Debug: Số lượng khách hàng tải được: " + customers.size());
-            senderHandler.sendResponse(new JsonResponse("GET_CUSTOMER_LIST", customers, "server"));
+            senderHandler.sendResponse(new JsonResponse(CommandType.GET_CUSTOMER_LIST.name(), customers, "server"));
 
         } catch (Exception e) {
             e.printStackTrace();
-            senderHandler.sendResponse(new JsonResponse("ERROR", "Failed to get customer list", "server"));
+            senderHandler.sendResponse(new JsonResponse(CommandType.ERROR.name(), "Failed to get customer list", "server"));
         }
     }
 
@@ -128,26 +135,25 @@ public class MessageController {
             if (customersAndMessages == null || customersAndMessages.isEmpty()) {
                 System.err.println("⚠️ Không tìm thấy khách hàng hoặc tin nhắn.");
                 senderHandler.sendResponse(
-                        new JsonResponse("NO_CUSTOMERS_WITH_MESSAGES", "No customers or messages found", "server")
+                        new JsonResponse(CommandType.NO_CUSTOMERS_WITH_MESSAGES.name(), "No customers or messages found", "server")
                 );
                 return;
             }
 
             senderHandler.sendResponse(
-                    new JsonResponse("GET_CUSTOMERS_WITH_MESSAGES", customersAndMessages, "server")
+                    new JsonResponse(CommandType.GET_CUSTOMERS_WITH_MESSAGES.name(), customersAndMessages, "server")
             );
 
             System.out.println("🟢 Debug: Trả về danh sách khách hàng và tin nhắn (" + customersAndMessages.size() + ").");
         } catch (Exception e) {
             e.printStackTrace();
-            senderHandler.sendResponse(new JsonResponse("ERROR", "Failed to get customer list with messages", "server"));
+            senderHandler.sendResponse(new JsonResponse(CommandType.ERROR.name(), "Failed to get customer list with messages", "server"));
         }
     }
 
     public static void notifyCustomer(Order order, String message) {
         String customerUsername = order.getCustomer().getUserName();
         String staffUsername = "staff"; // hoặc định danh nhân viên thực tế nếu có
-
 
         MessageDTO messageDTO = new MessageDTO(
                 staffUsername,                  // sender
@@ -168,6 +174,30 @@ public class MessageController {
             System.out.println("📢 Đã gửi thông báo tới khách: " + customerUsername);
         } else {
             System.err.println("❌ Không tìm thấy handler cho khách: " + customerUsername);
+        }
+    }
+    public void notifyMenu(String message) {
+        Customer customer = CustomerDAO.getInstance().selecById(SessionManager.instance().getCustomerId());
+        String staffusersame = "staff"; // hoặc định danh nhân viên thực tế nếu có
+        int idNguoiNhan = customer.getCustomer_Id(); // Lấy ID người nhận từ đối tượng cusstomer
+        System.out.println("ID người nhận: " + idNguoiNhan);
+        System.out.println("Tên người nhận: " + customer.getUserName());
+        MessageDTO messageDTO = new MessageDTO(
+                staffusersame,                  // sender
+                customer.getUserName(),               // receiver
+                message,                 // content
+                LocalDateTime.now(),            // thời gian gửi
+                idNguoiNhan    // customerId
+        );
+        // Lưu DB nếu muốn
+        MessageService messageService = new MessageService();
+        messageService.saveMessage(messageDTO);// Gửi socket đến client
+        ClientHandler customerHandler = ClientHandler.getClientByUsername(customer.getUserName());
+        if (customerHandler != null) {
+            customerHandler.broadcastMessage(messageDTO);
+            System.out.println("📢 Đã gửi thông báo tới khách: " + customer.getUserName());
+        } else {
+            System.err.println("❌ Không tìm thấy handler cho khách: " + customer.getUserName());
         }
     }
 }

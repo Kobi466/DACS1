@@ -22,7 +22,7 @@ public class RealTimeResponseHandler implements ResponseHandler {
                     updateChatUI(newMessage); // Gọi hàm để cập nhật UI
                 }
             }
-            case "MESSAGE_SENT" -> {
+            case "SEND_SUCCESS" -> {
                 System.out.println("[SocketClient] Message sent successfully!");
             }
             case "CHAT_HISTORY" -> {

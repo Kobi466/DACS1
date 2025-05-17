@@ -2,15 +2,21 @@ package network;
 
 public enum CommandType {
     // Các lệnh liên quan đến người dùng
+    ERROR,
+    //Dang nhap
     LOGIN,
     LOGIN_SUCCESS,
     LOGIN_FAIL,
+    //Chat
     SEND_MESSAGE,
+    SEND_SUCCESS,
+    NEW_MESSAGE,//tin nhan real time
+    //danh sach khach hang
     GET_CUSTOMER_LIST_WITH_MESSAGES,
-    MESSAGE_SENT,
-    NEW_MESSAGE, // Tin nhắn mới phát real-time
+    GET_CUSTOMERS_WITH_MESSAGES,
+    NO_CUSTOMERS_WITH_MESSAGES,
     GET_CHAT_HISTORY,
-    CHAT_HISTORY,
+    CHAT_HISTORY_SUCCESS,
     GET_CUSTOMER_LIST,
     GET_CUSTOMER_DETAILS,
     STAFF_JOINED,

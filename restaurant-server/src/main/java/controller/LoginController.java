@@ -3,6 +3,7 @@ package controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dto.CustomerDTO;
 import dto.LoginDTO;
+import network.CommandType;
 import network.JsonRequest;
 import network.JsonResponse;
 import service.CustomerService;
@@ -27,17 +28,15 @@ public class LoginController {
             if (customerDTO != null) {
                 clientHandler.setUsername(customerDTO.getUserName());
 
-                JsonResponse response = new JsonResponse("LOGIN_SUCCESS", customerDTO, "server");
+                JsonResponse response = new JsonResponse(CommandType.LOGIN_SUCCESS.name(), customerDTO, "server");
                 SessionManager.instance().setCustomerId(customerDTO.getCustomerId());
                 clientHandler.sendResponse(response);
             } else {
-                JsonResponse response = new JsonResponse("LOGIN_FAILED", null, "server");
+                JsonResponse response = new JsonResponse(CommandType.LOGIN_FAIL.name(), null, "server");
                 clientHandler.sendResponse(response);
             }
         } catch (Exception e) {
             e.printStackTrace();
-            JsonResponse errorResponse = new JsonResponse("LOGIN_ERROR", null, "server");
-            clientHandler.sendResponse(errorResponse);
         }
     }
 }

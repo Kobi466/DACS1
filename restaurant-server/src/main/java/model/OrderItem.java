@@ -18,18 +18,14 @@ public class OrderItem {
     @ManyToOne
     @JoinColumn(name="order_id")
     private Order order;
-    @OneToOne(mappedBy = "orderItem", cascade = CascadeType.ALL)
-    private KitchenQueue kitchenQueue;
-
     public OrderItem() {
     }
 
-    public OrderItem(int quantity, BigDecimal price, MenuItem menuItem, Order order, KitchenQueue kitchenQueue) {
+    public OrderItem(int quantity, BigDecimal price, MenuItem menuItem, Order order) {
         this.quantity = quantity;
         this.price = price;
         this.menuItem = menuItem;
         this.order = order;
-        this.kitchenQueue = kitchenQueue;
     }
 
     public int getOrderId() {
@@ -70,13 +66,5 @@ public class OrderItem {
 
     public void setOrder(Order order) {
         this.order = order;
-    }
-
-    public KitchenQueue getKitchenQueue() {
-        return kitchenQueue;
-    }
-
-    public void setKitchenQueue(KitchenQueue kitchenQueue) {
-        this.kitchenQueue = kitchenQueue;
     }
 }

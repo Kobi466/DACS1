@@ -40,8 +40,8 @@ public class StaffChatPanel extends JPanel {
                         System.out.println("📨 Nhận tin nhắn mới: " + response.getData());
                         handleIncomingMessage((MessageDTO) response.getData());
                     }
-                    case "MESSAGE_SENT" -> System.out.println("✅ Tin nhắn đã gửi thành công.");
-                    case "CHAT_HISTORY" -> {
+                    case "SEND_SUCCESS" -> System.out.println("✅ Tin nhắn đã gửi thành công.");
+                    case "CHAT_HISTORY_SUCCESS" -> {
                         System.out.println("⏬ Nhận lịch sử chat từ server: " + response.getData());
                         handleChatHistory((List<MessageDTO>) response.getData());
                     }

@@ -22,21 +22,17 @@ public class Order {
     private OrderStatus status;
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     private List<OrderItem> orderItems;
-    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL)
-    private Rating rating;
     public enum OrderStatus {
         CHO_XAC_NHAN, DA_XAC_NHAN, DANG_CHE_BIEN, HOAN_THANH, DA_HUY
     }
 
-    public Order(int order_Id, Customer customer, TableBooking table, LocalDateTime orderDate, OrderStatus status, List<OrderItem> orderItems, Rating rating) {
+    public Order(int order_Id, Customer customer, TableBooking table, LocalDateTime orderDate, OrderStatus status, List<OrderItem> orderItems) {
         this.order_Id = order_Id;
         this.customer = customer;
         this.table = table;
         this.orderDate = orderDate;
         this.status = status;
-        this.orderItems = orderItems;
-        this.rating = rating;
-    }
+        this.orderItems = orderItems;}
 
     public Order(Customer customer, TableBooking table, LocalDateTime orderDate, OrderStatus status, List<OrderItem> orderItems) {
         this.customer = customer;
@@ -52,14 +48,6 @@ public class Order {
 
     public void setOrderItems(List<OrderItem> orderItems) {
         this.orderItems = orderItems;
-    }
-
-    public Rating getRating() {
-        return rating;
-    }
-
-    public void setRating(Rating rating) {
-        this.rating = rating;
     }
 
     public Order() {

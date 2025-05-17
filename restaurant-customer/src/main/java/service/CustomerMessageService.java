@@ -58,7 +58,7 @@ public class CustomerMessageService {
         SocketClient.sendRequest(request); // Địa chỉ và cổng của server
 
         JsonResponse response = SocketClient.readResponse();
-        if (response != null && "CHAT_HISTORY".equals(response.getStatus())) {
+        if (response != null && "CHAT_HISTORY_SUCCESS".equals(response.getStatus())) {
             List<MessageDTO> messages = (List<MessageDTO>) response.getData(); // Dữ liệu chat từ server
             System.out.println("🟢 Debug: Chat history size: " + (messages != null ? messages.size() : 0));
             if (callback != null) callback.accept(messages);
