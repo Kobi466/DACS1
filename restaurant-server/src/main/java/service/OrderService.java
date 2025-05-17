@@ -157,7 +157,7 @@ public class OrderService {
 
             case DA_HUY:
                 System.out.println("[ACTION] Đơn hàng bị hủy – gửi thông báo tới khách hàng.");
-                MessageController.notifyCustomer(order, String.valueOf(next));
+                MessageController.notifyCustomer(order, "Đơn hàng của bạn đã bị hủy.");
                 TableBooking table3 = OrderDAO.getInstance().findTableByOrderId(orderId);
                 if (table3 != null) {
                     table3.setStatus(TableBooking.StatusTable.TRONG);
