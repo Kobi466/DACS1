@@ -24,5 +24,13 @@ public class CustomerService extends AbstractService<Customer, Integer> {
         }
         return null;
     }
+    public boolean regis(String username, String password, String sdt) {
+        Customer customer = CustomerMapper.toEntity(new CustomerDTO(username, password, sdt));
+        if(customer!=null){
+            customerDAO.insert(customer);
+            return true;
+        }
+        return false;
+    }
 
 }

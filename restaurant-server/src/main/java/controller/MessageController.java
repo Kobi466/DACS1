@@ -6,6 +6,7 @@ import model.Order;
 import network.CommandType;
 import repositoy_dao.CustomerDAO;
 import service.MenuItemService;
+import service.TableStatusService;
 import session.ChatHistoryRequest;
 import dto.MessageDTO;
 import network.JsonRequest;
@@ -41,7 +42,12 @@ public class MessageController {
             if (success) {
                 if ("Cho tôi xem menu quán".equals(messageDTO.getContent())) {
                     String notify = "📜 Menu hiện tại của nhà hàng:\n" + String.join("\n", new MenuItemService().showmenu());
-                    notifyMenu(notify);
+                    notify(notify);
+                    return;
+                }
+                if("Cho tôi xem những bàn trống hiện tại của nhà hàng".equals(messageDTO.getContent())){
+                    String notify = "🪑 Bàn hiện tại của nhà hàng:\n" + String.join("\n", new TableStatusService().showTableTrong());
+                    notify(notify);
                     return;
                 }
                 // Gửi phản hồi cho client
@@ -176,7 +182,7 @@ public class MessageController {
             System.err.println("❌ Không tìm thấy handler cho khách: " + customerUsername);
         }
     }
-    public void notifyMenu(String message) {
+    public void notify(String message) {
         Customer customer = CustomerDAO.getInstance().selecById(SessionManager.instance().getCustomerId());
         String staffusersame = "staff"; // hoặc định danh nhân viên thực tế nếu có
         int idNguoiNhan = customer.getCustomer_Id(); // Lấy ID người nhận từ đối tượng cusstomer

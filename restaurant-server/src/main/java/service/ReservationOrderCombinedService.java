@@ -38,6 +38,7 @@ public class ReservationOrderCombinedService {
 
     /**
      * Xử lý đặt bàn và tạo order.
+     *
      * @param dto dữ liệu đặt bàn + order từ client
      * @return OrderDTO chứa chi tiết order vừa tạo
      */
@@ -51,31 +52,22 @@ public class ReservationOrderCombinedService {
         // 2. Tìm bàn trống theo mã
         TableBooking table = tableBookingDAO.findAvailableByCode(
                 dto.getTableCode(), TableBooking.StatusTable.TRONG);
-        if (table == null) {
-            throw new RuntimeException("Không tìm thấy bàn trống với mã: " + dto.getTableCode());
-        }
-
-        // 3. Cập nhật trạng thái bàn
-        table.setStatus(TableBooking.StatusTable.DA_DAT);
-        tableBookingDAO.update(table);
-
-        // 4. Lưu reservation
-        Reservation reservation = mapper.toReservation(dto, customer, table);
-        reservationDAO.insert(reservation);
-
-        // 5. Tạo Order và set thông tin cơ bản
+        // 3. Tạo Order và set thông tin cơ bản
         Order order = new Order();
         order.setCustomer(customer);
         order.setTable(table);
         order.setOrderDate(LocalDateTime.now());
         order.setStatus(Order.OrderStatus.CHO_XAC_NHAN);
-        MessageController.notifyCustomer(order, "Cảm ơn bạn đã đặt bàn tại nhà hàng của chúng tôi! Vui lòng chờ nhà hàng tôi xác nhận đơn hàng hihi");
-
-        // 6. Tạo danh sách OrderItem
+        if (table == null) {
+            MessageController.notifyCustomer(order, "Hiện tại " + dto.getTableCode() + " đã có người đặt rồi, vui lòng khách hàng chọn bàn khác");
+            throw new RuntimeException("Không tìm thấy bàn trống với mã: " + dto.getTableCode());
+        }
+        // 4. Tạo danh sách OrderItem
         List<OrderItem> items = dto.getItems().stream()
                 .map(req -> {
                     MenuItem menuItem = menuItemDAO.findByName(req.getItemName());
                     if (menuItem == null) {
+                        MessageController.notifyCustomer(order, "Hiện tại nhà hàng tôi không có món: " + req.getItemName());
                         throw new RuntimeException("Không tìm thấy món: " + req.getItemName());
                     }
                     OrderItem oi = new OrderItem();
@@ -87,9 +79,8 @@ public class ReservationOrderCombinedService {
                 })
                 .collect(Collectors.toList());
 
-        // 7. Gắn OrderItem vào Order và lưu (cascade)
-        order.setOrderItems(items);
-        orderDAO.insert(order);
+        Reservation reservation = mapper.toReservation(dto, customer, table);
+
 
         // 8. Build và trả về OrderDTO
         OrderDTO result = new OrderDTO();
@@ -116,6 +107,17 @@ public class ReservationOrderCombinedService {
                 .map(OrderItemDTO::getTotalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         result.setTotalPrice(total.doubleValue());
+        if (table != null && order != null && customer != null && reservation != null && items != null) {
+            // 3. Cập nhật trạng thái bàn
+            table.setStatus(TableBooking.StatusTable.DA_DAT);
+            tableBookingDAO.update(table);
+            // 7. Gắn OrderItem vào Order và lưu (cascade)
+            order.setOrderItems(items);
+            orderDAO.insert(order);
+
+            reservationDAO.insert(reservation);
+            MessageController.notifyCustomer(order, "Cảm ơn bạn đã đặt bàn tại nhà hàng của chúng tôi. Vui lòng chừo nhân viên bên tôi xác nhận đơn hàng hihi");
+        }
 
         return result;
     }

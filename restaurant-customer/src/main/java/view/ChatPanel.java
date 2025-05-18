@@ -1,5 +1,6 @@
 package view;
 
+import controller.MessageController;
 import dto.MessageDTO;
 import service.CustomerMessageService;
 import util.RoundedTextArea;
@@ -7,25 +8,27 @@ import util.RoundedTextArea;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
 
 
 public class ChatPanel extends JPanel {
 
     private JPanel messageContainer; // Chứa toàn bộ tin nhắn
-    private JScrollPane scrollPane;
-    private JTextField inputField;
+    public JTextField inputField;
     private JButton sendButton;
     private CustomerMessageService messageService;
-    private String currentUsername;
+    public String currentUsername;
     private static ChatPanel instance;
+    private MessageController messageController;
 
     public ChatPanel(String currentUsername) {
         this.currentUsername = currentUsername;
         this.messageService = new CustomerMessageService();
+        this.messageController = new MessageController(this, messageService);
         instance = this;
 
         initUI();
-        loadChatHistory();
+        this.messageController.loadChatHistory();
         CustomerMessageService.listenForMessages("localhost", 8080);
     }
 
@@ -54,23 +57,29 @@ public class ChatPanel extends JPanel {
         JPanel inputPanel = new JPanel(new BorderLayout());
         inputPanel.add(inputField, BorderLayout.CENTER);
         inputPanel.add(sendButton, BorderLayout.EAST);
+        JButton suggestBtn = new JButton("Cú pháp");
+        inputPanel.add(suggestBtn, BorderLayout.WEST);
+        suggestBtn.addActionListener(e -> {
+            JPopupMenu menu = new JPopupMenu();
+            String[] suggestions = {
+                    "đặt bàn [ngày/tháng] lúc [hh:mm] [BAN1->8/PHONGVIP1->6] [món ăn] [số lượng] xuất",
+                    "Cho tôi xem menu quán",
+                    "Cho tôi xem những bàn trống hiện tại của nhà hàng"
+            };
+
+            for (String s : suggestions) {
+                JMenuItem item = new JMenuItem(s);
+                item.addActionListener(ev -> inputField.setText(s));
+                menu.add(item);
+            }
+
+            menu.show(suggestBtn, 0, suggestBtn.getHeight());
+        });
         add(inputPanel, BorderLayout.SOUTH);
+        ActionListener ac = new MessageController(this, messageService);
 
-
-        sendButton.addActionListener(e -> sendMessage());
-        inputField.addActionListener(e -> sendMessage());
-    }
-
-
-    private void sendMessage() {
-        String content = inputField.getText().trim();
-        if (content.isEmpty()) return;
-
-        String toUsername = "staff";
-        messageService.sendMessage(currentUsername, toUsername, content);
-
-        appendMessage(currentUsername, content); // Hiển thị luôn
-        inputField.setText("");
+        sendButton.addActionListener(ac);
+        inputField.addActionListener(ac);
     }
 
     public void appendMessage(String sender, String message) {
@@ -116,54 +125,8 @@ public class ChatPanel extends JPanel {
         });
     }
 
-
     private void scrollToBottom() {
         JScrollBar vertical = ((JScrollPane) this.getComponent(0)).getVerticalScrollBar();
         SwingUtilities.invokeLater(() -> vertical.setValue(vertical.getMaximum()));
-    }
-
-
-
-
-
-    private JPanel createMessageBubble(String sender, String message) {
-        JPanel bubble = new JPanel();
-        bubble.setLayout(new BorderLayout());
-        bubble.setBackground(sender.equals(currentUsername) ? new Color(0xDCF8C6) : new Color(0xFFFFFF));
-        bubble.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
-
-        JLabel messageLabel = new JLabel("<html><body style='width: 100%'>" + message + "</body></html>");
-        messageLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        messageLabel.setForeground(Color.BLACK);
-
-        bubble.add(messageLabel, BorderLayout.CENTER);
-
-        // Set max width to 60% screen
-        int maxWidth = (int) (getWidth() * 0.6);
-        messageLabel.setMaximumSize(new Dimension(maxWidth, Integer.MAX_VALUE));
-        bubble.setMaximumSize(new Dimension(maxWidth, Integer.MAX_VALUE));
-        bubble.setAlignmentX(sender.equals(currentUsername) ? Component.RIGHT_ALIGNMENT : Component.LEFT_ALIGNMENT);
-
-        // Rounded background
-        bubble.setOpaque(true);
-        bubble.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createEmptyBorder(4, 8, 4, 8),
-                BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1, true)
-        ));
-
-        return bubble;
-    }
-
-
-
-    private void loadChatHistory() {
-        String toUsername = "staff";
-        messageService.getChatHistory(currentUsername, toUsername, messages -> {
-            SwingUtilities.invokeLater(() -> {
-                for (MessageDTO msg : messages) {
-                    appendMessage(msg.getSender(), msg.getContent());
-                }
-            });
-        });
     }
 }

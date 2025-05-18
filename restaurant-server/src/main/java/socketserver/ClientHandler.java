@@ -67,6 +67,7 @@ public class ClientHandler implements Runnable {
 
                     switch (CommandType.valueOf(request.getCommand())) {
                         case LOGIN -> loginController.handleLoginRequest(request, this);
+                        case REGISTER -> loginController.handleRegis(request, this);
                         case SEND_MESSAGE -> messageController.handleSendMessage(request, this);
                         case GET_CHAT_HISTORY -> messageController.handleGetChatHistory(request, this);
                         case GET_CUSTOMER_LIST -> messageController.handleGetCustomerList(request, this);

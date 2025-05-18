@@ -7,6 +7,9 @@ public enum CommandType {
     LOGIN,
     LOGIN_SUCCESS,
     LOGIN_FAIL,
+    REGISTER_SUCCESS,
+    REGISTER_FAIL,
+    REGISTER,
     //Chat
     SEND_MESSAGE,
     SEND_SUCCESS,

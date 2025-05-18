@@ -52,6 +52,14 @@ public class TableBookingDAO extends AbstractDAO<TableBooking, Integer> {
             return null;
         }
     }
+    public List<TableBooking> findAllAvailable() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery(
+                            "FROM TableBooking tb WHERE tb.status = :status", TableBooking.class)
+                    .setParameter("status", TableBooking.StatusTable.TRONG)
+                    .list();
+        }
+    }
 
 
 }

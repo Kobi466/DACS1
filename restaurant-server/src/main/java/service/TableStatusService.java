@@ -1,12 +1,16 @@
 package service;
 
 import dto.TableStatusDTO;
+import model.MenuItem;
 import model.Order;
 import model.Reservation;
 import model.TableBooking;
+import repositoy_dao.MenuItemDAO;
+import repositoy_dao.TableBookingDAO;
 import repositoy_dao.TableStatusDAO;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class TableStatusService {
 
@@ -42,5 +46,12 @@ public class TableStatusService {
      */
     public boolean updateOrderStatus(int orderId, Order.OrderStatus newStatus) {
         return tableStatusDAO.updateOrderStatus(orderId, newStatus);
+    }
+    public List<String> showTableTrong(){
+        List<TableBooking> tableBookings = TableBookingDAO.getInstance().findAllAvailable();
+        List<String> tableList = tableBookings.stream()
+                .map(table -> "- " + table.getTableName() + ": " + table.getStatus())
+                .collect(Collectors.toList());
+        return tableList;
     }
 }

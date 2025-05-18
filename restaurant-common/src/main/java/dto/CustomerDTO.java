@@ -25,6 +25,12 @@ public class CustomerDTO implements Serializable {
         this.password = password;
     }
 
+    public CustomerDTO(String username, String password, String sdt) {
+        this.userName = username;
+        this.password = password;
+        this.sdt = sdt;
+    }
+
     public int getCustomerId() {
         return customerId;
     }
