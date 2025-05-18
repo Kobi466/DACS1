@@ -25,6 +25,11 @@
         <scope>compile</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-core</artifactId>
+            <version>5.8.5</version> <!-- Hoặc phiên bản tương thích bạn đang dùng -->
+        </dependency>
 
         <!-- Add Spring dependencies -->
         <dependency>

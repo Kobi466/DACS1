@@ -55,27 +55,6 @@ public class ChatService {
         SocketClient.sendRequest(request, SERVER_HOST, SERVER_PORT);
     }
 
-    // Xử lý tin nhắn đến từ server
-    public static void handleIncomingMessage(MessageDTO message, DefaultListModel<String> customerListModel, JTextArea chatArea, String selectedCustomer) {
-        String sender = message.getSender();
-
-        // Nếu là khách mới → thêm
-        if (!customerListModel.contains(sender)) {
-            customerListModel.addElement(sender);
-        }
-
-        // Nếu đang chọn đúng khách → hiển thị ngay
-        if (selectedCustomer != null && selectedCustomer.equals(sender)) {
-            ChatService.appendMessageToChat(chatArea, sender, message.getContent(), message.getSentAt());
-            chatArea.setCaretPosition(chatArea.getDocument().getLength()); // auto scroll
-        } else {
-            int index = customerListModel.indexOf(sender);
-            if (index != -1 && !customerListModel.get(index).contains("(*)")) {
-                customerListModel.set(index, sender + " (*)");
-            }
-        }
-    }
-
     // Hiển thị tin nhắn lên chat area
     public static void appendMessageToChat(JTextArea chatArea, String sender, String content, String sentAt) {
         chatArea.append(String.format("[%s] %s: %s\n", sentAt, sender, content));

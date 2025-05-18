@@ -5,11 +5,14 @@ import mapper.CustomerMapper;
 import org.mapstruct.factory.Mappers;
 import repositoy_dao.CustomerDAO;
 import model.Customer;
+import security.PasswordService;
 
 public class CustomerService extends AbstractService<Customer, Integer> {
 
     private final CustomerDAO customerDAO;
     private final CustomerMapper customerMapper;
+    private final PasswordService passwordService = new PasswordService();
+
 
 
     public CustomerService() {
@@ -19,13 +22,15 @@ public class CustomerService extends AbstractService<Customer, Integer> {
 
     public CustomerDTO login(String username, String password) {
         Customer customer = customerDAO.findByUsername(username);
-        if (customer != null && customer.getPassword().equals(password)) {
+        boolean isPasswordValid = passwordService.matches(password, customer.getPassword());
+        if (isPasswordValid==true) {
             return customerMapper.toDTO(customer); // Chuyển đổi chính xác từ Customer sang CustomerDTO
         }
         return null;
     }
     public boolean regis(String username, String password, String sdt) {
-        Customer customer = CustomerMapper.toEntity(new CustomerDTO(username, password, sdt));
+        String code = passwordService.encodePassword(password);
+        Customer customer = CustomerMapper.toEntity(new CustomerDTO(username, code, sdt));
         if(customer!=null){
             customerDAO.insert(customer);
             return true;
