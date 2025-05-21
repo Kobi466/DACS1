@@ -64,9 +64,11 @@ public class OrderPanel extends JPanel {
     // ====================== TABLE MODEL ======================
 
     private DefaultTableModel createOrderTableModel() {
-        return new DefaultTableModel(new Object[]{"ID", "Tên Khách", "SĐT", "Thời gian", "Trạng thái"}, 0) {
+        return new DefaultTableModel(
+                new Object[]{"ID", "Tên Khách", "SĐT", "Thời gian", "Trạng thái"}, 0
+        ) {
             public boolean isCellEditable(int row, int column) {
-                return false;
+                return false; // Không cho chỉnh sửa trực tiếp
             }
         };
     }
@@ -227,15 +229,27 @@ public class OrderPanel extends JPanel {
 
     public void updateOrderTable(List<OrderSummaryDTO> orders) {
         SwingUtilities.invokeLater(() -> {
-            orderModel.setRowCount(0);
+            orderModel.setRowCount(0); // Xóa dữ liệu cũ trong bảng
             DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
+
             for (OrderSummaryDTO o : orders) {
+                // Thay đổi màu sắc hoặc định dạng của trạng thái dựa vào trạng thái của đơn hàng
+                String statusDisplay = switch (o.getStatus()) {
+                    case CHO_XAC_NHAN -> "🟡 Chờ xác nhận";
+                    case DA_XAC_NHAN -> "🟢 Đã xác nhận";
+                    case DANG_CHE_BIEN -> "🔵 Đang chế biến";
+                    case HOAN_THANH -> "✅ Hoàn thành";
+                    case DA_HUY -> "❌ Đã hủy";
+                };
+
+                // Thêm dữ liệu vào bảng
                 orderModel.addRow(new Object[]{
-                        o.getOrderId(),
-                        o.getCustomerName(),
-                        o.getCustomerPhone(),
-                        o.getOrderDate().format(fmt),
-                        o.getStatus().name()
+                        o.getOrderId(),                             // ID
+                        o.getCustomerName(),                        // Tên khách
+                        o.getCustomerPhone(),                       // Số điện thoại khách
+                        o.getOrderDate().format(fmt),               // Thời gian
+                        statusDisplay,                              // Hiển thị trạng thái
+                        String.format("%,.2f VNĐ", o.getTotalPrice()) // Hiển thị số tiền
                 });
             }
         });
@@ -243,16 +257,35 @@ public class OrderPanel extends JPanel {
 
     public void updateOrderDetail(OrderDTO order) {
         SwingUtilities.invokeLater(() -> {
-            detailModel.setRowCount(0);
+            detailModel.setRowCount(0); // Xóa dữ liệu cũ
+
+            // Hiển thị từng sản phẩm trong bảng chi tiết đơn hàng
             for (OrderItemDTO item : order.getItems()) {
                 detailModel.addRow(new Object[]{
-                        item.getFoodName(),
-                        item.getQuantity(),
-                        item.getUnitPrice(),
-                        item.getTotalPrice()
+                        item.getFoodName(),                      // Tên món ăn
+                        item.getQuantity(),                      // Số lượng
+                        String.format("%,.2f VNĐ", item.getUnitPrice()),  // Đơn giá
+                        String.format("%,.2f VNĐ", item.getTotalPrice())  // Tổng giá
                 });
             }
+            detailModel.addRow(new Object[]{
+                    "Tổng tiền:", "", "", String.format("%,.2f VNĐ", order.getTotalPrice())
+            });
         });
+    }
+
+    // Hàm định dạng trạng thái (dựa vào trạng thái OrderSummaryDTO.OrderStatus)
+    private String formatOrderStatus(int orderId) {
+        OrderSummaryDTO orderSummary = controller.getOrderById(orderId);
+        if (orderSummary == null) return "Không xác định";
+
+        return switch (orderSummary.getStatus()) {
+            case CHO_XAC_NHAN -> "🟡 Chờ xác nhận";
+            case DA_XAC_NHAN -> "🟢 Đã xác nhận";
+            case DANG_CHE_BIEN -> "🔵 Đang chế biến";
+            case HOAN_THANH -> "✅ Hoàn thành";
+            case DA_HUY -> "❌ Đã hủy";
+        };
     }
 
     // ====================== TIỆN ÍCH ======================
