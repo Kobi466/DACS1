@@ -1,9 +1,7 @@
 package view;
 
 
-import controller.TableController;
 import network.GlobalResponseRouter;
-import service.TableService;
 
 import javax.swing.*;
 
@@ -19,7 +17,9 @@ public class StaffMainUI extends JFrame {
         JTabbedPane tabs = new JTabbedPane();
         tabs.add("💬 Nhắn với khách hàng", new StaffChatPanel());
         tabs.add("📦 Đơn hàng", new OrderPanel());
-        tabs.add("🍽️ Bàn ăn", new TablePanel("localhost", 8080));
+        tabs.add("🍽️ Bàn ăn", new TablePanel());
+
+
         add(tabs);
     }
 }

@@ -1,10 +1,12 @@
 package service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import controller.TableController;
 import dto.TableStatusDTO;
 import network.GlobalResponseRouter;
 import network.JsonRequest;
 import network.JsonResponse;
+
 import socket.SocketClient;
 import util.JacksonUtils;
 
@@ -16,10 +18,10 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 public class TableService {
+    public  String host;
+    public  int port;
 
-    private final String host;
-    private final int port;
-    private final List<Consumer<List<TableStatusDTO>>> tableStatusListeners = new ArrayList<>();
+    public List<Consumer<List<TableStatusDTO>>> listeners = new ArrayList<>();
 
     public TableService(String host, int port) {
         this.host = host;
@@ -29,13 +31,12 @@ public class TableService {
     }
 
     public void fetchAllTableStatuses(Consumer<List<TableStatusDTO>> callback) {
-        tableStatusListeners.add(callback);
+        listeners.add(callback);
         JsonRequest request = new JsonRequest("GET_ALL_TABLE_STATUS", null);
         SocketClient.sendRequest(request, host, port);
     }
 
-    public void updateTableStatus(int tableId, TableStatusDTO.StatusTable newStatus, Consumer<List<TableStatusDTO>> callback) {
-        tableStatusListeners.add(callback);
+    public void updateTableStatus(int tableId, TableStatusDTO.StatusTable newStatus) {
         Map<String, Object> data = new HashMap<>();
         data.put("tableId", tableId);
         data.put("newStatus", newStatus.name());
@@ -51,33 +52,36 @@ public class TableService {
                 if (status == null) return;
 
                 switch (status) {
-                    case "GET_ALL_TABLE_STATUS_SUCCESS":
-                    case "UPDATE_TABLE_STATUS_SUCCESS": {
-                        Object data = response.getData(); // Lấy dữ liệu phản hồi
-                        if (data instanceof List) {
-                            // Chuyển đổi sang định dạng List<TableStatusDTO>
-                            List<TableStatusDTO> list = JacksonUtils.getObjectMapper().convertValue(
-                                    data, new TypeReference<List<TableStatusDTO>>() {}
-                            );
-                            // Gửi danh sách dữ liệu đến các listener
-                            for (Consumer<List<TableStatusDTO>> listener : tableStatusListeners) {
-                                SwingUtilities.invokeLater(() -> listener.accept(list));
-                            }
-                        } else {
-                            System.err.println("⚠️ Warning: Dữ liệu phản hồi không phải List<TableStatusDTO>, nhận được: " + data);
+                    case "GET_ALL_TABLE_STATUS_SUCCESS" -> {
+                        List<TableStatusDTO> list = JacksonUtils.getObjectMapper().convertValue(
+                                response.getData(), new TypeReference<List<TableStatusDTO>>() {}
+                        );
+                        for (Consumer<List<TableStatusDTO>> listener : listeners) {
+                            SwingUtilities.invokeLater(() -> listener.accept(list));
                         }
-                        break;
+                        listeners.clear();
                     }
-                    case "UPDATE_TABLE_STATUS_FAIL": {
-                        SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(
-                                null,
+                    case "NEW_ORDER_CREATED" -> TableController.reloadTableStatus();
+                    case "UPDATE_ORDER_STATUS_SUCCESS" -> {
+                        // Server đã cập nhật, client có thể reload lại nếu muốn
+                        TableController.reloadTableStatus();
+                    }
+                    case "UPDATE_TABLE_STATUS" -> {
+                        TableController.reloadTableStatus(); // xử lý khi server chủ động thông báo
+                    }
+                    case "UPDATE_TABLE_STATUS_FAIL" -> {
+                        JOptionPane.showMessageDialog(null,
                                 "Cập nhật trạng thái bàn thất bại!",
                                 "Lỗi",
-                                JOptionPane.ERROR_MESSAGE
-                        ));
-                        break;
+                                JOptionPane.ERROR_MESSAGE);
                     }
-                    default: {
+
+                    case "UPDATE_TABLE_STATUS_SUCCESS" -> {
+                        // Server đã cập nhật, client có thể reload lại nếu muốn
+                        TableController.reloadTableStatus();
+                    }
+
+                    default -> {
                         System.out.println("⚠️ Không hiểu response: " + status);
                     }
                 }
@@ -86,4 +90,5 @@ public class TableService {
             }
         });
     }
+
 }

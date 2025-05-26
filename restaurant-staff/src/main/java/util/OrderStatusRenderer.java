@@ -13,19 +13,15 @@ public class OrderStatusRenderer extends DefaultTableCellRenderer {
                                                    int row, int column) {
         Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
-        // Lấy trạng thái từ bảng
         DefaultTableModel model = (DefaultTableModel) table.getModel();
-        String status = model.getValueAt(row, 4).toString(); // Dữ liệu trạng thái luôn ở cột 4
+        String status = model.getValueAt(row, 4).toString();
 
         if (!isSelected) {
-            // Thay đổi màu nền theo trạng thái
             switch (status) {
-                case "🟡 Chờ xác nhận" -> c.setBackground(new Color(255, 255, 153)); // Màu vàng nhạt
-                case "🟢 Đã xác nhận" -> c.setBackground(new Color(204, 255, 204)); // Màu xanh nhạt
-                case "🔵 Đang chế biến" -> c.setBackground(new Color(204, 229, 255)); // Màu xanh đậm
-                case "✅ Hoàn thành" -> c.setBackground(new Color(204, 255, 204)); // Màu xanh lá
-                case "❌ Đã hủy" -> c.setBackground(new Color(255, 204, 204)); // Màu đỏ nhạt
-                default -> c.setBackground(Color.WHITE); // Mặc định
+                case "CONFIRMED" -> c.setBackground(new Color(0xD4EFDF));
+                case "CANCELLED" -> c.setBackground(new Color(0xFADBD8));
+                case "COMPLETED" -> c.setBackground(new Color(0xD6EAF8));
+                default -> c.setBackground(Color.WHITE);
             }
         } else {
             c.setBackground(table.getSelectionBackground());
